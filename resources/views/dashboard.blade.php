@@ -41,7 +41,7 @@
     })();
     </script>
     <!-- AUTO-ADD-FIRST-STUDENT END -->
-  <div class="p-4 rounded-xl bg-blue-50 border"><div class="text-sm">Students</div><div class="text-2xl font-semibold">{{ $students }}</div></div>
+  <div class="p-4 rounded-xl bg-blue-50 border"><div class="text-sm">Total Students</div><div class="text-2xl font-semibold">{{ $students }}</div></div>
   <div class="p-4 rounded-xl bg-green-50 border"><div class="text-sm">Staff</div><div class="text-2xl font-semibold">{{ $staff }}</div></div>
   <div class="p-4 rounded-xl bg-yellow-50 border"><div class="text-sm">Books</div><div class="text-2xl font-semibold">{{ $books }}</div></div>
   <div class="p-4 rounded-xl bg-red-50 border"><div class="text-sm">Pending</div><div class="text-2xl font-semibold">{{ $pending }}</div></div>
