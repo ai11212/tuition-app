@@ -11,7 +11,7 @@ Route::post('/login', [AuthController::class,'login']);
 Route::post('/logout', [AuthController::class,'logout'])->name('logout');
 
 Route::middleware('auth')->group(function(){
-    Route::get('/', [DashboardController::class,'index'])->name('dashboard');
+    Route::get('/', [DashboardController::class,'index'])->name('dashboard1');
 
     // Students wizard
     Route::get('/students/create', [StudentController::class,'create'])->name('students.create');
