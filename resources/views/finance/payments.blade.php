@@ -14,15 +14,15 @@
   <form method="GET" action="{{ route('payments') }}" class="grid md:grid-cols-4 gap-3 mb-4">
     <div>
       <label class="text-sm text-gray-600">Reference</label>
-      <input name="ref" value="{{ old('ref', $ref ?? '') }}" class="w-full mt-1 rounded-lg border-gray-300" placeholder="Type to search...">
+  <input name="ref" value="{{ old('ref', $ref ?? '') }}" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2" placeholder="Type to search...">
     </div>
     <div>
       <label class="text-sm text-gray-600">From</label>
-      <input type="date" name="from" value="{{ old('from', $from ?? '') }}" class="w-full mt-1 rounded-lg border-gray-300">
+  <input type="date" name="from" value="{{ old('from', $from ?? '') }}" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
     </div>
     <div>
       <label class="text-sm text-gray-600">To</label>
-      <input type="date" name="to" value="{{ old('to', $to ?? '') }}" class="w-full mt-1 rounded-lg border-gray-300">
+  <input type="date" name="to" value="{{ old('to', $to ?? '') }}" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
     </div>
     <div class="flex items-end">
       <button class="w-full px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Search</button>
@@ -33,19 +33,31 @@
   <div class="p-4 rounded-xl border bg-white mb-6">
     <h2 class="font-semibold mb-3">Record a Payment</h2>
     @if(session('ok')) <div class="mb-3 text-sm text-emerald-700">{{ session('ok') }}</div> @endif
+    @php $students = $students ?? collect(); @endphp
     <form method="POST" action="{{ route('payments.store') }}" class="grid md:grid-cols-4 gap-3">
       @csrf
+      @if($students->count())
+      <div class="md:col-span-2">
+        <label class="text-sm text-gray-600">Student</label>
+  <select name="student_id" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
+          @foreach($students as $s)
+            <option value="{{ $s->id }}">{{ $s->full_name }} ({{ $s->reference }})</option>
+          @endforeach
+        </select>
+      </div>
+      @else
       <div class="md:col-span-1">
         <label class="text-sm text-gray-600">Reference*</label>
-        <input name="reference" value="{{ old('reference') }}" required class="w-full mt-1 rounded-lg border-gray-300">
+  <input name="reference" value="{{ old('reference') }}" required class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
       </div>
+      @endif
       <div class="md:col-span-1">
         <label class="text-sm text-gray-600">Amount (£)*</label>
-        <input name="amount" type="number" step="0.01" min="0" value="{{ old('amount') }}" required class="w-full mt-1 rounded-lg border-gray-300">
+  <input name="amount" type="number" step="0.01" min="0" value="{{ old('amount') }}" required class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
       </div>
       <div class="md:col-span-1">
         <label class="text-sm text-gray-600">Method</label>
-        <select name="method" class="w-full mt-1 rounded-lg border-gray-300">
+  <select name="method" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
           <option>Cash</option>
           <option>Card</option>
           <option>Bank</option>
@@ -54,11 +66,11 @@
       </div>
       <div class="md:col-span-1">
         <label class="text-sm text-gray-600">Paid at</label>
-        <input type="datetime-local" name="paid_at" value="{{ old('paid_at') }}" class="w-full mt-1 rounded-lg border-gray-300">
+  <input type="date" name="paid_at" value="{{ old('paid_at') }}" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
       </div>
       <div class="md:col-span-4">
         <label class="text-sm text-gray-600">Notes</label>
-        <textarea name="notes" rows="2" class="w-full mt-1 rounded-lg border-gray-300">{{ old('notes') }}</textarea>
+  <textarea name="notes" rows="2" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">{{ old('notes') }}</textarea>
       </div>
       <div class="md:col-span-4">
         <button class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Add Payment</button>
@@ -83,8 +95,14 @@
       <tbody>
         @forelse(($payments ?? []) as $p)
           @php
-            $ts = $p->paid_at ?: ($p->paid_on ? $p->paid_on.' 00:00:00' : null);
-            $when = $ts ? \Carbon\Carbon::parse($ts)->format('d/m/Y H:i') : '';
+            // Show date only (dd/mm/YYYY). prefer paid_at if present else paid_on
+            if ($p->paid_at) {
+              $when = \Carbon\Carbon::parse($p->paid_at)->format('d/m/Y');
+            } elseif ($p->paid_on) {
+              $when = \Carbon\Carbon::parse($p->paid_on)->format('d/m/Y');
+            } else {
+              $when = '';
+            }
           @endphp
           <tr class="border-t">
             <td class="px-3 py-2 whitespace-nowrap">{{ $when }}</td>
@@ -93,6 +111,7 @@
             <td class="px-3 py-2">{{ $p->method }}</td>
             <td class="px-3 py-2 text-right">£{{ number_format($p->amount,2) }}</td>
             <td class="px-3 py-2">{{ $p->invoice_ref ?? '' }}</td>
+            <td class="px-3 py-2">@if($p->invoice_id)<a href="{{ route('invoice.print',$p->invoice_id) }}" class="px-2 py-1 rounded bg-gray-100 text-sm">Print</a>@endif</td>
             <td class="px-3 py-2">{{ $p->notes }}</td>
           </tr>
         @empty

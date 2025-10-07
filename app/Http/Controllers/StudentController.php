@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Student;
+use App\Models\Timetable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 
@@ -103,7 +104,7 @@ class StudentController extends Controller
             'post_code'         => $admission['post_code'] ?? null,
         ];
 
-        // Create primary student
+    // Create primary student
         $main = [
             'reference'  => $reference,
             'first_name' => $admission['first_name'] ?? null,
@@ -113,7 +114,10 @@ class StudentController extends Controller
         ] + $guardian;
 
         $created = [];
-        $created[] = Student::create($main);
+    $created[] = Student::create($main);
+
+    // Timetable payload from form (timetable[studentIndex][dayIndex][slotIndex] = subject)
+    $timetableInput = $request->input('timetable', []);
 
         // Create siblings
         foreach (($admission['siblings'] ?? []) as $sib) {
@@ -129,6 +133,32 @@ class StudentController extends Controller
             if (!($row['first_name'] || $row['last_name'])) continue;
 
             $created[] = Student::create($row);
+        }
+
+        // Persist timetables: for each created student (primary + siblings)
+        // Map created students 0..n-1 to timetableInput indexes
+        foreach ($created as $idx => $stu) {
+            $studentRef = $stu->reference;
+            $studentTimetable = $timetableInput[$idx] ?? [];
+            // studentTimetable: dayIndex=>[slotIndex=>subject]
+            foreach ($studentTimetable as $dayIndex => $slots) {
+                foreach ($slots as $slotIndex => $subject) {
+                    if (!$subject) continue;
+                    // Map slotIndex to times
+                    $slotMap = [1=>['start'=>'12:00','end'=>'14:00'],2=>['start'=>'14:15','end'=>'16:15'],3=>['start'=>'16:45','end'=>'18:45'],4=>['start'=>'19:00','end'=>'21:00']];
+                    $s = $slotMap[$slotIndex] ?? null;
+                    if (!$s) continue;
+                    Timetable::create([
+                        'student_reference' => $studentRef,
+                        'day_of_week' => (int)$dayIndex,
+                        'start_time' => $s['start'],
+                        'end_time' => $s['end'],
+                        'subject' => $subject,
+                        'teacher_name' => null,
+                        'room' => null,
+                    ]);
+                }
+            }
         }
 
         // Clear session & finish

@@ -38,7 +38,7 @@ Route::middleware('auth')->group(function(){
     // Finance
     Route::get('/payments', [\App\Http\Controllers\PaymentController::class,'take'])->name('payments.take');
     Route::post('/payments', [\App\Http\Controllers\PaymentController::class,'store'])->name('payments.store');
-    Route::get('/invoice/{invoice}/print', [\App\Http\Controllers\PaymentController::class,'print'])->name('invoice.print');
+    Route::get('/invoice/{invoice}/print', [\App\Http\Controllers\PaymentController::class,'printInvoice'])->name('invoice.print');
     Route::get('/defaulters', [\App\Http\Controllers\PaymentController::class,'defaulters'])->name('defaulters');
     Route::get('/accounts', [\App\Http\Controllers\PaymentController::class,'summary'])->name('accounts.summary');
 

@@ -26,6 +26,7 @@ class PaymentController extends Controller
             ->leftJoin('students','invoices.student_id','=','students.id')
             ->select([
                 'payment_transactions.*',
+                'invoices.id as invoice_id',
                 'invoices.reference as invoice_ref',
                 'students.reference as student_ref',
                 DB::raw("CONCAT(COALESCE(students.first_name,''),' ',COALESCE(students.last_name,'')) as student_name")
@@ -45,10 +46,19 @@ class PaymentController extends Controller
             });
         }
 
-        $payments = $q->orderBy(DB::raw($orderExpr),'desc')
-                      ->paginate(25)->withQueryString();
+    $payments = $q->orderBy(DB::raw($orderExpr),'desc')
+              ->paginate(25)->withQueryString();
 
-        return view('finance.payments', compact('ref','from','to','payments'));
+        // If a reference filter was provided, also load matching students so
+        // the 'take' form can show student-specific inputs immediately.
+        $students = collect();
+        if ($ref !== '') {
+            $students = Student::where('reference','LIKE',$ref.'%')
+                ->orWhere(DB::raw("CONCAT(first_name,' ',last_name)"),'LIKE','%'.$ref.'%')
+                ->limit(50)->get();
+        }
+
+        return view('finance.payments', compact('ref','from','to','payments','students'));
     }
 
     /** Store a payment */
@@ -82,7 +92,8 @@ class PaymentController extends Controller
             'notes'      => $data['notes'] ?? null,
         ]);
 
-        return back()->with('ok','Payment recorded.');
+        // After creating an invoice+transaction, redirect to the invoice print page
+        return redirect()->route('invoice.print', $inv->id);
     }
 
     /** CSV export using current filters */
@@ -164,6 +175,14 @@ class PaymentController extends Controller
             ]);
 
         return view('finance.payments_print', compact('payments','ref','from','to'));
+    }
+
+    /** Print a single invoice (invoice id route) */
+    public function printInvoice(Invoice $invoice)
+    {
+        // load invoice with transactions and student
+        $invoice->load(['transactions','student']);
+        return view('finance.invoice', compact('invoice'));
     }
 
     /** ACCOUNTS SUMMARY */

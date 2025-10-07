@@ -22,7 +22,7 @@
       <tr>
         <td>{{ $p->student_ref }}</td>
         <td>{{ $p->student_name }}</td>
-        <td>{{ $p->paid_at ? \Carbon\Carbon::parse($p->paid_at)->format('d/m/Y H:i') : (\Carbon\Carbon::parse($p->paid_on)->format('d/m/Y').' 00:00') }}</td>
+  <td>{{ $p->paid_at ? \Carbon\Carbon::parse($p->paid_at)->format('d/m/Y') : (\Carbon\Carbon::parse($p->paid_on)->format('d/m/Y')) }}</td>
         <td>{{ $p->method }}</td>
         <td style="text-align:right">£{{ number_format($p->amount,2) }}</td>
         <td>{{ $p->notes }}</td>
