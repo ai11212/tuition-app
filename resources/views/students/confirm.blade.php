@@ -3,6 +3,11 @@
 @section('content')
 <div class="container">
   <h2 class="mb-4">New Admission — Confirm</h2>
+    {{-- DEBUG: show raw admission payload for troubleshooting --}}
+    <div class="alert alert-secondary">
+      <strong>Debug: admission payload</strong>
+      <pre style="white-space:pre-wrap;word-break:break-word">{{ json_encode($admission ?? [], JSON_PRETTY_PRINT) }}</pre>
+    </div>
 
   @php
     $a = $admission ?? [];
@@ -16,6 +21,8 @@
       <div><strong>Phone:</strong> {{ $a['guardian_phone'] ?? '' }}</div>
       <div><strong>Email:</strong> {{ $a['guardian_email'] ?? '' }}</div>
       <div><strong>Address:</strong> {{ $a['guardian_address'] ?? '' }}</div>
+      <div><strong>City:</strong> {{ $a['guardian_city'] ?? '' }}</div>
+      <div><strong>Notes:</strong> {{ $a['guardian_notes'] ?? '' }}</div>
       <div><strong>Post code:</strong> {{ $a['post_code'] ?? '' }}</div>
       <div><strong>Reference (optional):</strong> {{ $a['reference'] ?? '— will be auto-generated —' }}</div>
     </div>
@@ -27,6 +34,9 @@
       <div><strong>Name:</strong> {{ ($a['first_name'] ?? '') . ' ' . ($a['last_name'] ?? '') }}</div>
       <div><strong>Gender:</strong> {{ $a['gender'] ?? '' }}</div>
       <div><strong>DOB:</strong> {{ $a['dob'] ?? '' }}</div>
+      <div><strong>Enroll date:</strong> {{ $a['enroll_date'] ?? '' }}</div>
+      <div><strong>Start date:</strong> {{ $a['start_date'] ?? '' }}</div>
+      <div><strong>Deposit:</strong> {{ $a['deposit'] ?? '' }}</div>
     </div>
   </div>
 

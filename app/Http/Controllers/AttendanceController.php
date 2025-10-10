@@ -22,10 +22,11 @@ class AttendanceController extends Controller {
             'subject'=>'nullable|string',
             'statuses'=>'array'  // [student_id => 'present'|'absent']
         ]);
+        $time = $r->input('time');
         foreach(($data['statuses'] ?? []) as $studentId => $status){
             StudentAttendance::updateOrCreate(
-                ['student_id'=>$studentId,'date'=>$data['date'],'subject'=>$data['subject']],
-                ['status'=>$status]
+                ['student_id'=>$studentId,'date'=>$data['date'],'subject'=>$data['subject'],'time'=>$time],
+                ['status'=>$status,'time'=>$time]
             );
         }
         return back()->with('ok','Attendance saved');

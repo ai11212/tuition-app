@@ -18,11 +18,12 @@
   <button class="bg-gray-200 rounded px-3 py-2">Filter</button>
 </form>
 <table class="w-full">
-<tr class="bg-gray-50 border-b"><th class="p-2 text-left">Date</th><th>Student</th><th>Subject/Teacher</th><th>Status</th></tr>
+<tr class="bg-gray-50 border-b"><th class="p-2 text-left">Date</th><th>Student</th><th>Time slot</th><th>Subject/Teacher</th><th>Status</th></tr>
 @foreach($rows as $r)
 <tr class="border-b">
   <td class="p-2">{{ $r->date }}</td>
   <td>{{ $r->student?->full_name }} ({{ $r->student?->reference }})</td>
+  <td>{{ $r->time ?? '-' }}</td>
   <td>{{ $r->subject ?? '-' }} {{ $r->teacher ? '(' . $r->teacher . ')' : '' }}</td>
   <td class="{{ $r->status=='present'?'text-green-700':'text-red-700' }}">{{ ucfirst($r->status) }}</td>
 </tr>

@@ -1,4 +1,50 @@
+
 @extends('layouts.app')
+
+@section('content')
+<div class="container">
+    <h2 class="mb-4">All Students</h2>
+    @if (session('status'))
+        <div class="alert alert-success">{{ session('status') }}</div>
+    @endif
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Reference</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Gender</th>
+                <th>DOB</th>
+                <th>Guardian</th>
+                <th>City</th>
+                <th>Enroll Date</th>
+                <th>Start Date</th>
+                <th>Deposit</th>
+                <th>Period</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse ($students as $student)
+            <tr>
+                <td>{{ $student->reference }}</td>
+                <td>{{ $student->first_name }}</td>
+                <td>{{ $student->last_name }}</td>
+                <td>{{ $student->gender }}</td>
+                <td>{{ $student->dob }}</td>
+                <td>{{ $student->guardian_name }}</td>
+                <td>{{ $student->guardian_city }}</td>
+                <td>{{ $student->enroll_date }}</td>
+                <td>{{ $student->start_date }}</td>
+                <td>{{ $student->deposit }}</td>
+                <td>{{ $student->period }}</td>
+            </tr>
+            @empty
+            <tr><td colspan="11" class="text-center">No students found.</td></tr>
+            @endforelse
+        </tbody>
+    </table>
+</div>
+@endsection@extends('layouts.app')
 @section('content')
 <div class="flex justify-between items-center mb-4">
   <h1 class="text-xl font-bold">Students</h1>

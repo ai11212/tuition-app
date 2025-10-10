@@ -36,21 +36,20 @@
     @php $students = $students ?? collect(); @endphp
     <form method="POST" action="{{ route('payments.store') }}" class="grid md:grid-cols-4 gap-3">
       @csrf
-      @if($students->count())
       <div class="md:col-span-2">
-        <label class="text-sm text-gray-600">Student</label>
-  <select name="student_id" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
-          @foreach($students as $s)
-            <option value="{{ $s->id }}">{{ $s->full_name }} ({{ $s->reference }})</option>
-          @endforeach
-        </select>
-      </div>
-      @else
-      <div class="md:col-span-1">
         <label class="text-sm text-gray-600">Reference*</label>
-  <input name="reference" value="{{ old('reference') }}" required class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
+        <input name="reference" value="{{ old('reference') }}" required class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
+        @if($students->count())
+          <div class="mt-2 text-xs text-gray-500">
+            <span>Matching students:</span>
+            <ul>
+              @foreach($students as $s)
+                <li>{{ $s->full_name ?? ($s->first_name . ' ' . $s->last_name) }} ({{ $s->reference }})</li>
+              @endforeach
+            </ul>
+          </div>
+        @endif
       </div>
-      @endif
       <div class="md:col-span-1">
         <label class="text-sm text-gray-600">Amount (£)*</label>
   <input name="amount" type="number" step="0.01" min="0" value="{{ old('amount') }}" required class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Student;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Timetable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -11,8 +12,8 @@ class StudentController extends Controller
 {
     public function index()
     {
-        // keep route alive; land user on create
-        return redirect()->route('students.create');
+    $students = \App\Models\Student::paginate(20);
+        return view('students.index', compact('students'));
     }
 
     public function create()
@@ -31,6 +32,8 @@ class StudentController extends Controller
             'guardian_phone'    => 'nullable|string|max:120',
             'guardian_email'    => 'nullable|email|max:50',
             'guardian_address'  => 'nullable|string|max:190',
+            'guardian_city'     => 'nullable|string|max:120',
+            'guardian_notes'    => 'nullable|string|max:255',
             'post_code'         => 'nullable|string|max:120',
 
             // reference optional on step1 (we will auto-generate if empty in store)
@@ -41,6 +44,11 @@ class StudentController extends Controller
             'last_name'         => 'required|string|max:100',
             'gender'            => 'nullable|in:male,female,other',
             'dob'               => 'nullable|date',
+            'city'              => 'nullable|string|max:120',
+            'enroll_date'       => 'nullable|date',
+            'start_date'        => 'nullable|date',
+            'deposit'           => 'nullable|numeric',
+            'period'            => 'nullable|string|max:32',
 
             // siblings[] array (same minimal fields)
             'siblings'                      => 'array',
@@ -106,15 +114,23 @@ class StudentController extends Controller
 
     // Create primary student
         $main = [
-            'reference'  => $reference,
-            'first_name' => $admission['first_name'] ?? null,
-            'last_name'  => $admission['last_name'] ?? null,
-            'gender'     => $admission['gender'] ?? null,
-            'dob'        => $admission['dob'] ?? null,
+            'reference'   => $reference,
+            'first_name'  => $admission['first_name'] ?? null,
+            'last_name'   => $admission['last_name'] ?? null,
+            'gender'      => $admission['gender'] ?? null,
+            'dob'         => $admission['dob'] ?? null,
+            'guardian_city' => $admission['guardian_city'] ?? null,
+            'enroll_date' => $admission['enroll_date'] ?? null,
+            'start_date'  => $admission['start_date'] ?? null,
+            'deposit'     => $admission['deposit'] ?? null,
+            'period'      => $admission['period'] ?? null,
         ] + $guardian;
 
         $created = [];
-    $created[] = Student::create($main);
+        // Filter $main to only columns that exist in the students table on this environment
+        $allowed = Schema::hasTable('students') ? Schema::getColumnListing('students') : [];
+        $payload = array_intersect_key($main, array_flip($allowed));
+        $created[] = Student::create($payload);
 
     // Timetable payload from form (timetable[studentIndex][dayIndex][slotIndex] = subject)
     $timetableInput = $request->input('timetable', []);
@@ -132,7 +148,8 @@ class StudentController extends Controller
             // skip fully empty names
             if (!($row['first_name'] || $row['last_name'])) continue;
 
-            $created[] = Student::create($row);
+            $rowPayload = array_intersect_key($row, array_flip($allowed));
+            $created[] = Student::create($rowPayload);
         }
 
         // Persist timetables: for each created student (primary + siblings)

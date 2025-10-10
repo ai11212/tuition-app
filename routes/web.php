@@ -23,6 +23,20 @@ Route::middleware('auth')->group(function(){
     Route::put('/students/{student}',      [StudentController::class,'update'])->name('students.update');
     Route::delete('/students/{student}',   [StudentController::class,'destroy'])->name('students.destroy');
 
+    // Debug: show current admission session (authenticated)
+    Route::get('/debug/admission', function (\Illuminate\Http\Request $r) {
+        return response()->json($r->session()->get('admission'));
+    })->name('debug.admission');
+
+
+// Temporary public debug route (keyed). Remove after debugging.
+Route::get('/debug/admission-public', function (\Illuminate\Http\Request $r) {
+    $key = $r->query('key');
+    if ($key !== env('DEBUG_ADMISSION_KEY', 'local-debug-key')) {
+        return response('Unauthorized', 401);
+    }
+    return response()->json($r->session()->get('admission'));
+});
     // Staff + Books
     Route::resource('staff', StaffController::class)->except(['show']);
     Route::resource('books', BookController::class)->except(['show']);

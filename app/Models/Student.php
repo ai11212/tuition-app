@@ -10,7 +10,9 @@ class Student extends Model
         'reference',
         'first_name','last_name','gender','dob',
         'guardian_name','guardian_relation','guardian_phone','guardian_email','guardian_address',
+        'guardian_city',
         'post_code',
+        'city', 'enroll_date', 'start_date', 'deposit', 'period',
     ];
 
     // Safety net: auto-assign reference if controller missed it (should not happen now)

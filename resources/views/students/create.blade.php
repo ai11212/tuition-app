@@ -22,6 +22,7 @@
     <form method="POST" action="{{ route('students.next') }}" id="admission-form">
         @csrf
 
+
         <div class="card mb-4">
             <div class="card-header">Guardian details</div>
             <div class="card-body">
@@ -45,6 +46,14 @@
                     <div class="col-12">
                         <label class="form-label">Guardian address</label>
                         <input type="text" name="guardian_address" class="form-control" value="{{ old('guardian_address') }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Guardian city</label>
+                        <input type="text" name="guardian_city" class="form-control" value="{{ old('guardian_city') }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Guardian notes</label>
+                        <input type="text" name="guardian_notes" class="form-control" value="{{ old('guardian_notes') }}">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Post code (guardian)</label>
@@ -71,6 +80,7 @@
                         <label class="form-label">Last name *</label>
                         <input type="text" name="last_name" class="form-control" value="{{ old('last_name') }}" required>
                     </div>
+                        <!-- student contact fields removed as requested -->
                     <div class="col-md-4">
                         <label class="form-label">Gender</label>
                         <select name="gender" class="form-select">
@@ -84,6 +94,26 @@
                         <label class="form-label">Date of birth</label>
                         <input type="date" name="dob" class="form-control" value="{{ old('dob') }}">
                     </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Enroll date</label>
+                        <input type="date" name="enroll_date" class="form-control" value="{{ old('enroll_date') }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Start date</label>
+                        <input type="date" name="start_date" class="form-control" value="{{ old('start_date') }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Deposit</label>
+                        <input type="number" step="0.01" min="0" name="deposit" class="form-control" value="{{ old('deposit') }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Period</label>
+                        <select name="period" class="form-select">
+                            <option value="">— Select —</option>
+                            <option value="weekly" @selected(old('period')==='weekly')>Weekly</option>
+                            <option value="monthly" @selected(old('period')==='monthly')>Monthly</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -94,6 +124,8 @@
             <button type="button" class="btn btn-outline-secondary" id="add-sibling">+ Add another sibling</button>
             <button type="submit" class="btn btn-primary">Next</button>
         </div>
+        
+        <!-- Debug helpers removed: normal form submit restored -->
     </form>
 </div>
 
@@ -137,5 +169,6 @@
     wrap.appendChild(div);
   });
 })();
+
 </script>
 @endsection
