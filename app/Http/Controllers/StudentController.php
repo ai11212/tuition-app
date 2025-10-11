@@ -129,6 +129,7 @@ class StudentController extends Controller
             'gender'      => $admission['gender'] ?? null,
             'dob'         => $admission['dob'] ?? null,
             'guardian_city' => $admission['guardian_city'] ?? null,
+            'city'        => $admission['guardian_city'] ?? null, // Map guardian_city to city as well
             'enroll_date' => $admission['enroll_date'] ?? null,
             'start_date'  => $admission['start_date'] ?? null,
             'deposit'     => $admission['deposit'] ?? null,
