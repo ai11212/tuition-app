@@ -10,10 +10,19 @@ use Illuminate\Support\Arr;
 
 class StudentController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-    $students = \App\Models\Student::paginate(20);
-        return view('students.index', compact('students'));
+        $reference = $request->input('reference');
+        
+        $students = Student::query()
+            ->when($reference, function($q) use ($reference) {
+                return $q->where('reference', 'like', $reference . '%');
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(20)
+            ->withQueryString();
+            
+        return view('students.index', compact('students', 'reference'));
     }
 
     public function create()

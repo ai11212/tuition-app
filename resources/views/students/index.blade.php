@@ -7,6 +7,25 @@
     @if (session('status'))
         <div class="alert alert-success">{{ session('status') }}</div>
     @endif
+    
+    <!-- Search Form -->
+    <div class="mb-4">
+        <form method="GET" action="{{ route('students.index') }}" class="d-flex gap-2">
+            <input type="text" 
+                   name="reference" 
+                   value="{{ $reference }}" 
+                   placeholder="Search by reference..." 
+                   class="form-control" 
+                   style="max-width: 300px;">
+            <button type="submit" class="btn btn-primary">Search</button>
+            @if($reference)
+                <a href="{{ route('students.index') }}" class="btn btn-secondary">Clear</a>
+            @endif
+        </form>
+        @if($reference)
+            <small class="text-muted">Showing results for: "{{ $reference }}"</small>
+        @endif
+    </div>
     <table class="table table-bordered table-striped">
         <thead>
             <tr>
