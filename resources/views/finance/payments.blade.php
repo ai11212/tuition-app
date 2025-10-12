@@ -29,6 +29,96 @@
     </div>
   </form>
 
+  {{-- Student Information Card (when exact reference match found) --}}
+  @if(isset($studentDetails) && $studentDetails)
+    <div class="p-4 rounded-xl border-2 border-blue-200 bg-blue-50 mb-6">
+      <h2 class="font-semibold text-blue-900 mb-3">Student Information</h2>
+      <div class="grid md:grid-cols-4 gap-4 text-sm">
+        <div>
+          <span class="text-blue-700 font-medium">Reference:</span><br>
+          <span class="text-lg font-semibold">{{ $studentDetails['student']->reference }}</span>
+        </div>
+        <div>
+          <span class="text-blue-700 font-medium">Name:</span><br>
+          <span class="text-lg">{{ $studentDetails['student']->first_name }} {{ $studentDetails['student']->last_name }}</span>
+        </div>
+        <div>
+          <span class="text-blue-700 font-medium">Deposit:</span><br>
+          <span class="text-lg font-semibold text-green-700">£{{ number_format($studentDetails['deposit'], 2) }}</span>
+        </div>
+        <div>
+          <span class="text-blue-700 font-medium">Payment:</span><br>
+          <span class="text-lg font-semibold text-green-700">£{{ number_format($studentDetails['payment'], 2) }}</span>
+        </div>
+      </div>
+      <div class="grid md:grid-cols-2 gap-4 mt-4 text-sm">
+        <div>
+          <span class="text-blue-700 font-medium">Total Payments Made:</span><br>
+          <span class="text-lg font-semibold text-green-700">£{{ number_format($studentDetails['total_paid'], 2) }}</span>
+          <div class="text-xs text-blue-600 mt-1">
+            Payments for books: £{{ number_format($studentDetails['payments_for_books'], 2) }}
+          </div>
+        </div>
+        <div>
+          <span class="text-blue-700 font-medium">Book Payments Pending:</span><br>
+          <span class="text-lg font-semibold {{ $studentDetails['book_payments_pending'] > 0 ? 'text-orange-600' : 'text-green-700' }}">
+            £{{ number_format($studentDetails['book_payments_pending'], 2) }}
+          </span>
+          <div class="text-xs text-blue-600 mt-1">
+            Total books value: £{{ number_format($studentDetails['total_book_price'], 2) }}
+          </div>
+        </div>
+      </div>
+      
+      {{-- Book Details --}}
+      <div class="mt-4 pt-3 border-t border-blue-200">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-blue-700 font-medium">Required Books for Student's Subjects:</span>
+          @if($studentDetails['student_subjects']->count() > 0)
+            <span class="text-xs text-blue-600">
+              Subjects: {{ $studentDetails['student_subjects']->join(', ') }}
+            </span>
+          @endif
+        </div>
+        
+        @if($studentDetails['books']->count() > 0)
+          <div class="grid md:grid-cols-2 gap-2 text-sm">
+            @foreach($studentDetails['books'] as $book)
+              <div class="flex justify-between items-center bg-blue-100 px-3 py-2 rounded">
+                <div>
+                  <span class="font-medium">{{ $book->subject }}</span><br>
+                  <span class="text-blue-800">{{ $book->title }}</span>
+                  <span class="text-xs text-blue-600 block">Ref: {{ $book->reference }}</span>
+                </div>
+                <span class="font-semibold text-blue-900">£{{ number_format($book->price, 2) }}</span>
+              </div>
+            @endforeach
+          </div>
+        @else
+          <div class="bg-yellow-50 border border-yellow-200 rounded px-3 py-2 text-sm text-yellow-800">
+            @if($studentDetails['student_subjects']->count() > 0)
+              No books available for subjects: {{ $studentDetails['student_subjects']->join(', ') }}
+            @else
+              Student has no timetable entries. No books to display.
+            @endif
+          </div>
+        @endif
+      </div>
+      @if($studentDetails['student']->guardian_name)
+        <div class="mt-4 pt-3 border-t border-blue-200 text-sm">
+          <span class="text-blue-700 font-medium">Guardian:</span>
+          {{ $studentDetails['student']->guardian_name }}
+          @if($studentDetails['student']->guardian_phone)
+            | Phone: {{ $studentDetails['student']->guardian_phone }}
+          @endif
+          @if($studentDetails['student']->guardian_email)
+            | Email: {{ $studentDetails['student']->guardian_email }}
+          @endif
+        </div>
+      @endif
+    </div>
+  @endif
+
   {{-- Recorder --}}
   <div class="p-4 rounded-xl border bg-white mb-6">
     <h2 class="font-semibold mb-3">Record a Payment</h2>

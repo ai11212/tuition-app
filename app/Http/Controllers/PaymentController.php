@@ -52,13 +52,56 @@ class PaymentController extends Controller
         // If a reference filter was provided, also load matching students so
         // the 'take' form can show student-specific inputs immediately.
         $students = collect();
+        $studentDetails = null;
         if ($ref !== '') {
             $students = Student::where('reference','LIKE',$ref.'%')
                 ->orWhere(DB::raw("CONCAT(first_name,' ',last_name)"),'LIKE','%'.$ref.'%')
                 ->limit(50)->get();
+            
+            // If exact reference match, load enhanced student details
+            $exactStudent = Student::where('reference', $ref)->first();
+            if ($exactStudent) {
+                // Calculate total payments made for this student
+                $totalPaid = PaymentTransaction::leftJoin('invoices', 'payment_transactions.invoice_id', '=', 'invoices.id')
+                    ->where('invoices.student_id', $exactStudent->id)
+                    ->sum('payment_transactions.amount');
+                
+                // Load books for subjects that this student is studying
+                $studentSubjects = \App\Models\Timetable::where('student_reference', $exactStudent->reference)
+                    ->distinct('subject')
+                    ->pluck('subject');
+                    
+                // If student has timetable, filter books by their subjects
+                // Otherwise, show all books (fallback for students without timetables)
+                if ($studentSubjects->count() > 0) {
+                    $books = \App\Models\Book::whereIn('subject', $studentSubjects)
+                        ->orderBy('subject')->orderBy('title')->get();
+                } else {
+                    $books = \App\Models\Book::orderBy('subject')->orderBy('title')->get();
+                }
+                
+                $totalBookPrice = $books->sum('price');
+                
+                // Calculate book payments pending (assuming all books are required for the student)
+                // This is the total book cost minus payments made (excluding deposit)
+                $paymentsForBooks = max(0, $totalPaid - ($exactStudent->deposit ?? 0));
+                $bookPaymentsPending = max(0, $totalBookPrice - $paymentsForBooks);
+                
+                $studentDetails = [
+                    'student' => $exactStudent,
+                    'total_paid' => $totalPaid,
+                    'books' => $books,
+                    'student_subjects' => $studentSubjects,
+                    'total_book_price' => $totalBookPrice,
+                    'payments_for_books' => $paymentsForBooks,
+                    'book_payments_pending' => $bookPaymentsPending,
+                    'deposit' => $exactStudent->deposit ?? 0,
+                    'payment' => $exactStudent->payment ?? 0
+                ];
+            }
         }
 
-        return view('finance.payments', compact('ref','from','to','payments','students'));
+        return view('finance.payments', compact('ref','from','to','payments','students','studentDetails'));
     }
 
     /** Store a payment */
