@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use App\Models\{Invoice, PaymentTransaction, Student};
 use App\Models\Expense;
@@ -69,6 +70,8 @@ class PaymentController extends Controller
                 // Check if student_reference column exists in books table
                 $hasStudentReferenceColumn = Schema::hasColumn('books', 'student_reference');
                 
+
+                
                 // Load books for this specific student
                 $assignedBooks = collect();
                 $subjectBooks = collect();
@@ -77,32 +80,67 @@ class PaymentController extends Controller
                     // Priority 1: Books directly assigned to this student reference
                     $assignedBooks = \App\Models\Book::where('student_reference', $exactStudent->reference)
                         ->orderBy('subject')->orderBy('title')->get();
+                    
+
+                } else {
+                    // If no student_reference column, try to find books by matching reference field
+                    $assignedBooks = \App\Models\Book::where('reference', $exactStudent->reference)
+                        ->orderBy('subject')->orderBy('title')->get();
+
                 }
                 
                 // Priority 2: Books for subjects that this student is studying (general books)
                 $studentSubjects = \App\Models\Timetable::where('student_reference', $exactStudent->reference)
                     ->distinct('subject')
                     ->pluck('subject');
+                
+
                     
                 if ($studentSubjects->count() > 0) {
                     if ($hasStudentReferenceColumn) {
-                        // Filter out books assigned to specific students
-                        $subjectBooks = \App\Models\Book::whereIn('subject', $studentSubjects)
+                        // Filter out books assigned to specific students (case-insensitive subject matching)
+                        $subjectBooks = \App\Models\Book::where(function($q) use ($studentSubjects) {
+                                foreach ($studentSubjects as $subject) {
+                                    $q->orWhereRaw('LOWER(subject) = ?', [strtolower($subject)]);
+                                }
+                            })
                             ->where(function($q) {
                                 $q->whereNull('student_reference')
                                   ->orWhere('student_reference', '');
                             })
                             ->orderBy('subject')->orderBy('title')->get();
                     } else {
-                        // Fallback: show all books for subjects (backward compatibility)
-                        $subjectBooks = \App\Models\Book::whereIn('subject', $studentSubjects)
+                        // Fallback: show all books for subjects (backward compatibility, case-insensitive)
+                        $subjectBooks = \App\Models\Book::where(function($q) use ($studentSubjects) {
+                                foreach ($studentSubjects as $subject) {
+                                    $q->orWhereRaw('LOWER(subject) = ?', [strtolower($subject)]);
+                                }
+                            })
                             ->orderBy('subject')->orderBy('title')->get();
                     }
                 }
                 
-                // Combine both collections
+                // Combine both collections - prioritize assigned books
                 $books = $assignedBooks->concat($subjectBooks);
                 $totalBookPrice = $books->sum('price');
+                
+                // If no books found by either method, try alternative matching
+                if ($books->count() == 0) {
+                    // Try finding books where the book reference contains or matches student reference
+                    $alternativeBooks = \App\Models\Book::where('reference', 'LIKE', '%' . $exactStudent->reference . '%')
+                        ->orWhere('reference', $exactStudent->reference)
+                        ->orderBy('subject')->orderBy('title')->get();
+                        
+                    if ($alternativeBooks->count() > 0) {
+                        $books = $alternativeBooks;
+                        $assignedBooks = $alternativeBooks;
+                        $totalBookPrice = $books->sum('price');
+                        
+
+                    }
+                }
+                
+
                 
                 // Calculate book payments pending (assuming all books are required for the student)
                 // This is the total book cost minus payments made (excluding deposit)
