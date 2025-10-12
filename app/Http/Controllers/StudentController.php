@@ -195,4 +195,47 @@ class StudentController extends Controller
 
         return redirect()->route('students.create')->with('status', 'Admission saved: '.count($created).' record(s) created. Ref '.$reference);
     }
+
+    public function edit(Student $student)
+    {
+        return view('students.edit', compact('student'));
+    }
+
+    public function update(Request $request, Student $student)
+    {
+        $data = $request->validate([
+            'reference' => 'required|string|max:255',
+            'first_name' => 'required|string|max:100',
+            'last_name' => 'required|string|max:100',
+            'gender' => 'nullable|in:male,female,other',
+            'dob' => 'nullable|date',
+            'guardian_name' => 'nullable|string|max:120',
+            'guardian_phone' => 'nullable|string|max:120',
+            'guardian_email' => 'nullable|email|max:50',
+            'guardian_address' => 'nullable|string|max:190',
+            'guardian_city' => 'nullable|string|max:120',
+            'city' => 'nullable|string|max:120',
+            'enroll_date' => 'nullable|date',
+            'start_date' => 'nullable|date',
+            'deposit' => 'nullable|numeric',
+            'payment' => 'nullable|numeric',
+            'period' => 'nullable|string|max:32',
+            'post_code' => 'nullable|string|max:120',
+        ]);
+
+        $student->update($data);
+
+        return redirect()->route('students.index')->with('status', 'Student updated successfully.');
+    }
+
+    public function destroy(Student $student)
+    {
+        // Remove related timetable entries
+        Timetable::where('student_reference', $student->reference)->delete();
+        
+        // Remove the student
+        $student->delete();
+
+        return redirect()->route('students.index')->with('status', 'Student deleted successfully.');
+    }
 }
