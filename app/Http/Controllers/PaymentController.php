@@ -66,24 +66,38 @@ class PaymentController extends Controller
                     ->where('invoices.student_id', $exactStudent->id)
                     ->sum('payment_transactions.amount');
                 
+                // Check if student_reference column exists in books table
+                $hasStudentReferenceColumn = Schema::hasColumn('books', 'student_reference');
+                
                 // Load books for this specific student
-                // Priority 1: Books directly assigned to this student reference
-                $assignedBooks = \App\Models\Book::where('student_reference', $exactStudent->reference)
-                    ->orderBy('subject')->orderBy('title')->get();
+                $assignedBooks = collect();
+                $subjectBooks = collect();
+                
+                if ($hasStudentReferenceColumn) {
+                    // Priority 1: Books directly assigned to this student reference
+                    $assignedBooks = \App\Models\Book::where('student_reference', $exactStudent->reference)
+                        ->orderBy('subject')->orderBy('title')->get();
+                }
                 
                 // Priority 2: Books for subjects that this student is studying (general books)
                 $studentSubjects = \App\Models\Timetable::where('student_reference', $exactStudent->reference)
                     ->distinct('subject')
                     ->pluck('subject');
                     
-                $subjectBooks = collect();
                 if ($studentSubjects->count() > 0) {
-                    $subjectBooks = \App\Models\Book::whereIn('subject', $studentSubjects)
-                        ->where(function($q) {
-                            $q->whereNull('student_reference')
-                              ->orWhere('student_reference', '');
-                        })
-                        ->orderBy('subject')->orderBy('title')->get();
+                    if ($hasStudentReferenceColumn) {
+                        // Filter out books assigned to specific students
+                        $subjectBooks = \App\Models\Book::whereIn('subject', $studentSubjects)
+                            ->where(function($q) {
+                                $q->whereNull('student_reference')
+                                  ->orWhere('student_reference', '');
+                            })
+                            ->orderBy('subject')->orderBy('title')->get();
+                    } else {
+                        // Fallback: show all books for subjects (backward compatibility)
+                        $subjectBooks = \App\Models\Book::whereIn('subject', $studentSubjects)
+                            ->orderBy('subject')->orderBy('title')->get();
+                    }
                 }
                 
                 // Combine both collections

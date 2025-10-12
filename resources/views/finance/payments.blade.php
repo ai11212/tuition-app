@@ -74,7 +74,7 @@
       <div class="mt-4 pt-3 border-t border-blue-200">
         
         {{-- Assigned Books Section --}}
-        @if($studentDetails['assigned_books']->count() > 0)
+        @if(isset($studentDetails['assigned_books']) && $studentDetails['assigned_books']->count() > 0)
           <div class="mb-4">
             <div class="flex justify-between items-center mb-2">
               <span class="text-blue-700 font-medium">📚 Books Assigned to {{ $studentDetails['student']->reference }}:</span>
@@ -98,7 +98,7 @@
         @endif
         
         {{-- General Subject Books Section --}}
-        @if($studentDetails['subject_books']->count() > 0)
+        @if(isset($studentDetails['subject_books']) && $studentDetails['subject_books']->count() > 0)
           <div class="mb-4">
             <div class="flex justify-between items-center mb-2">
               <span class="text-blue-700 font-medium">📖 General Books for Student's Subjects:</span>
