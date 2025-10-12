@@ -76,39 +76,114 @@
       }
     @endphp
 
+    @php
+      $dayOrder = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+      $dayNames = ['Mon'=>'Monday','Tue'=>'Tuesday','Wed'=>'Wednesday','Thu'=>'Thursday','Fri'=>'Friday','Sat'=>'Saturday','Sun'=>'Sunday'];
+      $slotMap = [
+        'Mon'=>['12–2pm','2:15–4:15pm','4:45–6:45pm','7–9pm'],
+        'Tue'=>['12–2pm','2:15–4:15pm','4:45–6:45pm','7–9pm'],
+        'Wed'=>['12–2pm','2:15–4:15pm','4:45–6:45pm','7–9pm'],
+        'Thu'=>['12–2pm','2:15–4:15pm','4:45–6:45pm','7–9pm'],
+        'Fri'=>['9–11am','11:15–1:15pm','4:45–6:45pm','7–9pm'],
+        'Sat'=>['9–11am','11:15–1:15pm','2:15–4:15pm','4:30–6:30pm'],
+        'Sun'=>['9–11am','11:15–1:15pm','2:15–4:15pm','4:30–6:30pm'],
+      ];
+    @endphp
     @foreach($students as $si => $stu)
       <div class="card mb-3">
-        <div class="card-header">Timetable — {{ $stu['name'] ?: 'Student '.($si+1) }}</div>
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Timetable — {{ $stu['name'] ?: 'Student '.($si+1) }}</span>
+          <button type="button" class="btn btn-sm btn-outline-primary" onclick="window.printTimetable{{ $si }}()">Print</button>
+        </div>
         <div class="card-body">
-          <div class="text-sm text-gray-600 mb-2">Select subject for each day & slot (leave empty if not attending).</div>
-          <table class="table table-sm">
-            <thead>
-              <tr>
-                <th>Day</th>
-                @foreach($slots as $slot)
-                  <th>{{ \Carbon\Carbon::createFromFormat('H:i',$slot['start'])->format('g:i A') }} — {{ \Carbon\Carbon::createFromFormat('H:i',$slot['end'])->format('g:i A') }}</th>
-                @endforeach
-              </tr>
-            </thead>
-            <tbody>
-              @foreach($days as $di => $d)
+          <div id="timetable-print-{{ $si }}">
+            <div class="mb-2">
+              <strong>Student:</strong> {{ $stu['name'] ?: 'Student '.($si+1) }}<br>
+              <strong>Reference:</strong> {{ $a['reference'] ?? '—' }}
+            </div>
+            <table class="table table-bordered text-center align-middle">
+              <thead>
                 <tr>
-                  <td class="align-middle">{{ $d }}</td>
-                  @foreach($slots as $si2 => $sl)
-                    <td>
-                      <select name="timetable[{{ $si }}][{{ $di+1 }}][{{ $si2+1 }}]" class="form-control">
-                        <option value="">—</option>
-                        @foreach($subjects as $sub)
-                          <option value="{{ $sub }}">{{ $sub }}</option>
-                        @endforeach
-                      </select>
-                    </td>
+                  @foreach($dayOrder as $d)
+                    <th>{{ $dayNames[$d] }}</th>
                   @endforeach
                 </tr>
-              @endforeach
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                @for($slot=0;$slot<4;$slot++)
+                  <tr>
+                    @foreach($dayOrder as $d)
+                    <td>
+                      <div class="fw-bold small mb-1">{{ $slotMap[$d][$slot] }}</div>
+                      <select name="timetable[{{ $si }}][{{ $d }}][{{ $slot }}]" class="form-select">
+                        <option value="">—</option>
+                        @foreach($subjects as $sub)
+                          <option value="{{ $sub }}" @if(old('timetable.'.$si.'.'.$d.'.'.$slot)==$sub) selected @endif>{{ $sub }}</option>
+                        @endforeach
+                      </select>
+                      <span class="print-subject d-none" id="print-subject-{{ $si }}-{{ $d }}-{{ $slot }}">
+                        {{ old('timetable.'.$si.'.'.$d.'.'.$slot) ?? '—' }}
+                      </span>
+                    </td>
+                    @endforeach
+                  </tr>
+                @endfor
+              </tbody>
+            </table>
+          </div>
         </div>
+        <script>
+        window.printTimetable{{ $si }} = function() {
+          var studentName = '{{ $stu["name"] ?: "Student ".($si+1) }}';
+          var reference = '{{ $a["reference"] ?? "—" }}';
+          
+          // Build timetable HTML with selected values
+          var html = '<html><head><title>Timetable - ' + studentName + '</title>';
+          html += '<style>body{font-family:Arial,sans-serif;margin:20px;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #000;padding:8px;text-align:center;}th{background:#f5f5f5;}</style>';
+          html += '</head><body>';
+          html += '<h3>Timetable</h3>';
+          html += '<p><strong>Student:</strong> ' + studentName + '<br><strong>Reference:</strong> ' + reference + '</p>';
+          html += '<table>';
+          html += '<thead><tr><th>Monday</th><th>Tuesday</th><th>Wednesday</th><th>Thursday</th><th>Friday</th><th>Saturday</th><th>Sunday</th></tr></thead>';
+          html += '<tbody>';
+          
+          var days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+          var slots = [
+            ['12–2pm','12–2pm','12–2pm','12–2pm','9–11am','9–11am','9–11am'],
+            ['2:15–4:15pm','2:15–4:15pm','2:15–4:15pm','2:15–4:15pm','11:15–1:15pm','11:15–1:15pm','11:15–1:15pm'],
+            ['4:45–6:45pm','4:45–6:45pm','4:45–6:45pm','4:45–6:45pm','4:45–6:45pm','2:15–4:15pm','2:15–4:15pm'],
+            ['7–9pm','7–9pm','7–9pm','7–9pm','7–9pm','4:30–6:30pm','4:30–6:30pm']
+          ];
+          
+          for(var slot = 0; slot < 4; slot++) {
+            html += '<tr>';
+            for(var dayIdx = 0; dayIdx < 7; dayIdx++) {
+              var day = days[dayIdx];
+              var select = document.querySelector('select[name="timetable[{{ $si }}][' + day + '][' + slot + ']"]');
+              var subject = select ? select.value : '—';
+              if(!subject) subject = '—';
+              html += '<td><div style="font-weight:bold;font-size:12px;margin-bottom:4px;">' + slots[slot][dayIdx] + '</div>' + subject + '</td>';
+            }
+            html += '</tr>';
+          }
+          
+          html += '</tbody></table>';
+          html += '<div style="margin-top:20px;text-align:center;">';
+          html += '<button onclick="window.print()" style="padding:10px 20px;margin-right:10px;">Print</button>';
+          html += '<button onclick="window.close()" style="padding:10px 20px;">Close</button>';
+          html += '</div>';
+          html += '</body></html>';
+          
+          var printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
+          if (printWindow) {
+            printWindow.document.write(html);
+            printWindow.document.close();
+            printWindow.focus();
+          } else {
+            alert('Please allow popups for this site to print the timetable.');
+          }
+        }
+        </script>
       </div>
     @endforeach
 
