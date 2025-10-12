@@ -39,6 +39,7 @@
                 <th>Enroll Date</th>
                 <th>Start Date</th>
                 <th>Deposit</th>
+                <th>Payment</th>
                 <th>Period</th>
             </tr>
         </thead>
@@ -55,10 +56,11 @@
                 <td>{{ $student->enroll_date }}</td>
                 <td>{{ $student->start_date }}</td>
                 <td>{{ $student->deposit }}</td>
+                <td>{{ $student->payment }}</td>
                 <td>{{ $student->period }}</td>
             </tr>
             @empty
-            <tr><td colspan="11" class="text-center">No students found.</td></tr>
+            <tr><td colspan="12" class="text-center">No students found.</td></tr>
             @endforelse
         </tbody>
     </table>

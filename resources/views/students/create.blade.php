@@ -107,6 +107,10 @@
                         <input type="number" step="0.01" min="0" name="deposit" class="form-control" value="{{ old('deposit') }}">
                     </div>
                     <div class="col-md-4">
+                        <label class="form-label">Payment</label>
+                        <input type="number" step="0.01" min="0" name="payment" class="form-control" value="{{ old('payment') }}">
+                    </div>
+                    <div class="col-md-4">
                         <label class="form-label">Period</label>
                         <select name="period" class="form-select">
                             <option value="">— Select —</option>

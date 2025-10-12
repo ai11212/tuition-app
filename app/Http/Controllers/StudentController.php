@@ -57,6 +57,7 @@ class StudentController extends Controller
             'enroll_date'       => 'nullable|date',
             'start_date'        => 'nullable|date',
             'deposit'           => 'nullable|numeric',
+            'payment'           => 'nullable|numeric',
             'period'            => 'nullable|string|max:32',
 
             // siblings[] array (same minimal fields)
@@ -133,6 +134,7 @@ class StudentController extends Controller
             'enroll_date' => $admission['enroll_date'] ?? null,
             'start_date'  => $admission['start_date'] ?? null,
             'deposit'     => $admission['deposit'] ?? null,
+            'payment'     => $admission['payment'] ?? null,
             'period'      => $admission['period'] ?? null,
         ] + $guardian;
 

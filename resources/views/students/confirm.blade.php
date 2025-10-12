@@ -37,6 +37,7 @@
       <div><strong>Enroll date:</strong> {{ $a['enroll_date'] ?? '' }}</div>
       <div><strong>Start date:</strong> {{ $a['start_date'] ?? '' }}</div>
       <div><strong>Deposit:</strong> {{ $a['deposit'] ?? '' }}</div>
+      <div><strong>Payment:</strong> {{ $a['payment'] ?? '' }}</div>
     </div>
   </div>
 
