@@ -3,10 +3,12 @@
 @include('partials.flash')
 <h1 class="text-xl font-semibold mb-4">Edit Book</h1>
 <form method="POST" action="{{ route('books.update',$book) }}" class="grid grid-cols-2 gap-4">@csrf @method('PUT')
-<input name="reference" class="border p-2" value="{{ $book->reference }}">
-<input name="subject" class="border p-2" value="{{ $book->subject }}">
-<input name="title" class="border p-2" value="{{ $book->title }}">
-<input name="price" class="border p-2" value="{{ $book->price }}">
+<input name="reference" class="border p-2" placeholder="Book Reference" value="{{ $book->reference }}" required>
+<input name="subject" class="border p-2" placeholder="Subject" value="{{ $book->subject }}" required>
+<input name="title" class="border p-2" placeholder="Book Title" value="{{ $book->title }}" required>
+<input name="price" class="border p-2" placeholder="Price" step="0.01" type="number" value="{{ $book->price }}" required>
+<input name="student_reference" class="border p-2" placeholder="Student Reference (Optional)" value="{{ $book->student_reference }}">
+<div class="text-sm text-gray-600">Leave student reference empty for general books available to all students with matching subjects</div>
 <button class="bg-blue-600 text-white rounded px-4 py-2 col-span-2">Update</button>
 </form>
 @endsection

@@ -66,20 +66,28 @@ class PaymentController extends Controller
                     ->where('invoices.student_id', $exactStudent->id)
                     ->sum('payment_transactions.amount');
                 
-                // Load books for subjects that this student is studying
+                // Load books for this specific student
+                // Priority 1: Books directly assigned to this student reference
+                $assignedBooks = \App\Models\Book::where('student_reference', $exactStudent->reference)
+                    ->orderBy('subject')->orderBy('title')->get();
+                
+                // Priority 2: Books for subjects that this student is studying (general books)
                 $studentSubjects = \App\Models\Timetable::where('student_reference', $exactStudent->reference)
                     ->distinct('subject')
                     ->pluck('subject');
                     
-                // If student has timetable, filter books by their subjects
-                // Otherwise, show all books (fallback for students without timetables)
+                $subjectBooks = collect();
                 if ($studentSubjects->count() > 0) {
-                    $books = \App\Models\Book::whereIn('subject', $studentSubjects)
+                    $subjectBooks = \App\Models\Book::whereIn('subject', $studentSubjects)
+                        ->where(function($q) {
+                            $q->whereNull('student_reference')
+                              ->orWhere('student_reference', '');
+                        })
                         ->orderBy('subject')->orderBy('title')->get();
-                } else {
-                    $books = \App\Models\Book::orderBy('subject')->orderBy('title')->get();
                 }
                 
+                // Combine both collections
+                $books = $assignedBooks->concat($subjectBooks);
                 $totalBookPrice = $books->sum('price');
                 
                 // Calculate book payments pending (assuming all books are required for the student)
@@ -91,6 +99,8 @@ class PaymentController extends Controller
                     'student' => $exactStudent,
                     'total_paid' => $totalPaid,
                     'books' => $books,
+                    'assigned_books' => $assignedBooks,
+                    'subject_books' => $subjectBooks,
                     'student_subjects' => $studentSubjects,
                     'total_book_price' => $totalBookPrice,
                     'payments_for_books' => $paymentsForBooks,

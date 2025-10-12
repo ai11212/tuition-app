@@ -72,32 +72,63 @@
       
       {{-- Book Details --}}
       <div class="mt-4 pt-3 border-t border-blue-200">
-        <div class="flex justify-between items-center mb-2">
-          <span class="text-blue-700 font-medium">Required Books for Student's Subjects:</span>
-          @if($studentDetails['student_subjects']->count() > 0)
-            <span class="text-xs text-blue-600">
-              Subjects: {{ $studentDetails['student_subjects']->join(', ') }}
-            </span>
-          @endif
-        </div>
         
-        @if($studentDetails['books']->count() > 0)
-          <div class="grid md:grid-cols-2 gap-2 text-sm">
-            @foreach($studentDetails['books'] as $book)
-              <div class="flex justify-between items-center bg-blue-100 px-3 py-2 rounded">
-                <div>
-                  <span class="font-medium">{{ $book->subject }}</span><br>
-                  <span class="text-blue-800">{{ $book->title }}</span>
-                  <span class="text-xs text-blue-600 block">Ref: {{ $book->reference }}</span>
+        {{-- Assigned Books Section --}}
+        @if($studentDetails['assigned_books']->count() > 0)
+          <div class="mb-4">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-blue-700 font-medium">📚 Books Assigned to {{ $studentDetails['student']->reference }}:</span>
+              <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                Total: £{{ number_format($studentDetails['assigned_books']->sum('price'), 2) }}
+              </span>
+            </div>
+            <div class="grid md:grid-cols-2 gap-2 text-sm">
+              @foreach($studentDetails['assigned_books'] as $book)
+                <div class="flex justify-between items-center bg-green-100 px-3 py-2 rounded border-l-4 border-green-500">
+                  <div>
+                    <span class="font-medium text-green-800">{{ $book->subject }}</span><br>
+                    <span class="text-green-900 font-medium">{{ $book->title }}</span>
+                    <span class="text-xs text-green-700 block">Ref: {{ $book->reference }}</span>
+                  </div>
+                  <span class="font-semibold text-green-900">£{{ number_format($book->price, 2) }}</span>
                 </div>
-                <span class="font-semibold text-blue-900">£{{ number_format($book->price, 2) }}</span>
-              </div>
-            @endforeach
+              @endforeach
+            </div>
           </div>
-        @else
+        @endif
+        
+        {{-- General Subject Books Section --}}
+        @if($studentDetails['subject_books']->count() > 0)
+          <div class="mb-4">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-blue-700 font-medium">📖 General Books for Student's Subjects:</span>
+              <div class="text-xs">
+                <span class="text-blue-600">Subjects: {{ $studentDetails['student_subjects']->join(', ') }}</span>
+                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded ml-2">
+                  Total: £{{ number_format($studentDetails['subject_books']->sum('price'), 2) }}
+                </span>
+              </div>
+            </div>
+            <div class="grid md:grid-cols-2 gap-2 text-sm">
+              @foreach($studentDetails['subject_books'] as $book)
+                <div class="flex justify-between items-center bg-blue-100 px-3 py-2 rounded">
+                  <div>
+                    <span class="font-medium">{{ $book->subject }}</span><br>
+                    <span class="text-blue-800">{{ $book->title }}</span>
+                    <span class="text-xs text-blue-600 block">Ref: {{ $book->reference }}</span>
+                  </div>
+                  <span class="font-semibold text-blue-900">£{{ number_format($book->price, 2) }}</span>
+                </div>
+              @endforeach
+            </div>
+          </div>
+        @endif
+        
+        {{-- No Books Message --}}
+        @if($studentDetails['books']->count() == 0)
           <div class="bg-yellow-50 border border-yellow-200 rounded px-3 py-2 text-sm text-yellow-800">
             @if($studentDetails['student_subjects']->count() > 0)
-              No books available for subjects: {{ $studentDetails['student_subjects']->join(', ') }}
+              No books available for student {{ $studentDetails['student']->reference }} or subjects: {{ $studentDetails['student_subjects']->join(', ') }}
             @else
               Student has no timetable entries. No books to display.
             @endif
