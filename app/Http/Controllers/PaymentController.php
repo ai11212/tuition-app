@@ -287,7 +287,14 @@ class PaymentController extends Controller
     {
         // load invoice with transactions and student
         $invoice->load(['transactions','student']);
-        return view('finance.invoice', compact('invoice'));
+        
+        // Get student's timetable/class schedule
+        $timetables = \App\Models\Timetable::where('student_id', $invoice->student_id)
+            ->orderBy('day_of_week')
+            ->orderBy('start_time')
+            ->get();
+        
+        return view('finance.invoice', compact('invoice', 'timetables'));
     }
 
     /** ACCOUNTS SUMMARY */

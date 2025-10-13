@@ -6,7 +6,35 @@ use Illuminate\Support\Facades\Schema;
 
 class BookController extends Controller {
     public function index(){ $items = Book::latest()->paginate(20); return view('books.index', compact('items')); }
-    public function create(){ return view('books.create'); }
+    
+    public function create(Request $request)
+    { 
+        // Build query with search and filter
+        $query = Book::query();
+        
+        // Search by reference, subject, or title
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('reference', 'like', "%{$search}%")
+                  ->orWhere('subject', 'like', "%{$search}%")
+                  ->orWhere('title', 'like', "%{$search}%");
+            });
+        }
+        
+        // Filter by student reference
+        if ($request->filled('student_ref') && Schema::hasColumn('books', 'student_reference')) {
+            $studentRef = $request->student_ref;
+            $query->where(function($q) use ($studentRef) {
+                $q->where('student_reference', 'like', "%{$studentRef}%")
+                  ->orWhereNull('student_reference');
+            });
+        }
+        
+        $books = $query->latest()->paginate(15)->withQueryString();
+        
+        return view('books.create', compact('books')); 
+    }
     public function store(Request $r){
         // Check if student_reference column exists
         $hasStudentReferenceColumn = Schema::hasColumn('books', 'student_reference');

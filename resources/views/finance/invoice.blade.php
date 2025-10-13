@@ -1,15 +1,217 @@
 @extends('layouts.app')
 @section('content')
-<h1 class="text-xl font-semibold mb-4">Invoice {{ $invoice->reference }}</h1>
-<div class="mb-4">Student: <b>{{ $invoice->student->full_name }}</b> ({{ $invoice->student->reference }})</div>
-<div class="mb-4">Period: {{ $invoice->period_from }} → {{ $invoice->period_to }}</div>
-<div class="mb-4">Amount: <b>{{ number_format($invoice->amount,2) }}</b></div>
-<h2 class="font-semibold mb-2">Transactions</h2>
-<table class="w-full">
-<tr class="border-b bg-gray-50"><th class="p-2 text-left">Date</th><th>Amount</th><th>Method</th></tr>
-@foreach($invoice->transactions as $t)
-<tr class="border-b"><td class="p-2">{{ $t->paid_on }}</td><td>{{ number_format($t->amount,2) }}</td><td>{{ $t->method }}</td></tr>
-@endforeach
-</table>
-<button onclick="window.print()" class="mt-4 bg-gray-200 px-3 py-2 rounded">Print</button>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice {{ $invoice->reference }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .invoice-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #333;
+        }
+        .invoice-header h1 {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .invoice-header .ref {
+            font-size: 14px;
+            color: #666;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 5px;
+        }
+        .info-row {
+            display: flex;
+            padding: 8px 0;
+        }
+        .info-label {
+            font-weight: bold;
+            width: 150px;
+            color: #555;
+        }
+        .info-value {
+            flex: 1;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        table th {
+            background: #f8f8f8;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+            border: 1px solid #ddd;
+        }
+        table td {
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+        }
+        .amount-total {
+            text-align: right;
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f8f8;
+            border-radius: 5px;
+        }
+        .print-btn {
+            display: block;
+            width: 150px;
+            margin: 30px auto 0;
+            padding: 12px 24px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            text-align: center;
+        }
+        .print-btn:hover {
+            background: #0056b3;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .invoice-container {
+                box-shadow: none;
+                padding: 20px;
+            }
+            .print-btn {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <div class="invoice-header">
+            <h1>INVOICE</h1>
+            <div class="ref">{{ $invoice->reference }}</div>
+        </div>
+
+        <!-- Student Information -->
+        <div class="section">
+            <div class="section-title">Student Information</div>
+            <div class="info-row">
+                <div class="info-label">Name:</div>
+                <div class="info-value">{{ $invoice->student->first_name }} {{ $invoice->student->last_name }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Reference:</div>
+                <div class="info-value">{{ $invoice->student->reference }}</div>
+            </div>
+        </div>
+
+        <!-- Period Information -->
+        <div class="section">
+            <div class="section-title">Billing Period</div>
+            <div class="info-row">
+                <div class="info-label">Period Type:</div>
+                <div class="info-value">{{ ucfirst($invoice->student->period ?? 'Weekly') }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">From:</div>
+                <div class="info-value">{{ \Carbon\Carbon::parse($invoice->period_from)->format('d M Y') }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">To:</div>
+                <div class="info-value">{{ \Carbon\Carbon::parse($invoice->period_to)->format('d M Y') }}</div>
+            </div>
+        </div>
+
+        <!-- Class Schedule -->
+        @if($timetables->count() > 0)
+        <div class="section">
+            <div class="section-title">Class Schedule</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Day</th>
+                        <th>Time</th>
+                        <th>Subject</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($timetables as $t)
+                    <tr>
+                        <td>{{ $t->day_of_week }}</td>
+                        <td>{{ \Carbon\Carbon::parse($t->start_time)->format('g:ia') }} - {{ \Carbon\Carbon::parse($t->end_time)->format('g:ia') }}</td>
+                        <td>{{ $t->subject }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
+
+        <!-- Payment Transactions -->
+        <div class="section">
+            <div class="section-title">Payment Transactions</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($invoice->transactions as $t)
+                    <tr>
+                        <td>{{ \Carbon\Carbon::parse($t->paid_on)->format('d M Y') }}</td>
+                        <td>£{{ number_format($t->amount, 2) }}</td>
+                        <td>{{ $t->method }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Total Amount -->
+        <div class="amount-total">
+            Total Amount: £{{ number_format($invoice->amount, 2) }}
+        </div>
+
+        <button onclick="window.print()" class="print-btn">Print Invoice</button>
+    </div>
+</body>
+</html>
 @endsection
