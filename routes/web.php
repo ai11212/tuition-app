@@ -61,6 +61,9 @@ Route::get('/debug/admission-public', function (\Illuminate\Http\Request $r) {
     Route::get('/reference-profile/show', [ReferenceProfileController::class,'show'])->name('ref.show');
     Route::get('/print-timetable', [TimetableController::class,'printForm'])->name('tt.form');
     Route::get('/print-timetable/show', [TimetableController::class,'print'])->name('tt.show');
+    
+    // Enhanced student timetable printing
+    Route::get('/student/{reference}/timetable/print', [TimetableController::class,'printStudentTimetable'])->name('student.timetable.print');
 
     // Account
     Route::get('/account/password', [AccountController::class,'passwordForm'])->name('account.password');

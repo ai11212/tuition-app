@@ -166,26 +166,106 @@ class StudentController extends Controller
 
         // Persist timetables: for each created student (primary + siblings)
         // Map created students 0..n-1 to timetableInput indexes
+        
+        // Day string to number mapping (matches admission form)
+        $dayToNumber = [
+            'Mon' => 0, 'Tue' => 1, 'Wed' => 2, 'Thu' => 3,
+            'Fri' => 4, 'Sat' => 5, 'Sun' => 6
+        ];
+        
+        // Time slots for each day (matches admission form exactly)
+        $dayTimeSlots = [
+            'Mon' => [
+                0 => ['start'=>'12:00','end'=>'14:00'],
+                1 => ['start'=>'14:15','end'=>'16:15'],
+                2 => ['start'=>'16:45','end'=>'18:45'],
+                3 => ['start'=>'19:00','end'=>'21:00'],
+            ],
+            'Tue' => [
+                0 => ['start'=>'12:00','end'=>'14:00'],
+                1 => ['start'=>'14:15','end'=>'16:15'],
+                2 => ['start'=>'16:45','end'=>'18:45'],
+                3 => ['start'=>'19:00','end'=>'21:00'],
+            ],
+            'Wed' => [
+                0 => ['start'=>'12:00','end'=>'14:00'],
+                1 => ['start'=>'14:15','end'=>'16:15'],
+                2 => ['start'=>'16:45','end'=>'18:45'],
+                3 => ['start'=>'19:00','end'=>'21:00'],
+            ],
+            'Thu' => [
+                0 => ['start'=>'12:00','end'=>'14:00'],
+                1 => ['start'=>'14:15','end'=>'16:15'],
+                2 => ['start'=>'16:45','end'=>'18:45'],
+                3 => ['start'=>'19:00','end'=>'21:00'],
+            ],
+            'Fri' => [
+                0 => ['start'=>'09:00','end'=>'11:00'],
+                1 => ['start'=>'11:15','end'=>'13:15'],
+                2 => ['start'=>'16:45','end'=>'18:45'],
+                3 => ['start'=>'19:00','end'=>'21:00'],
+            ],
+            'Sat' => [
+                0 => ['start'=>'09:00','end'=>'11:00'],
+                1 => ['start'=>'11:15','end'=>'13:15'],
+                2 => ['start'=>'14:15','end'=>'16:15'],
+                3 => ['start'=>'16:30','end'=>'18:30'],
+            ],
+            'Sun' => [
+                0 => ['start'=>'09:00','end'=>'11:00'],
+                1 => ['start'=>'11:15','end'=>'13:15'],
+                2 => ['start'=>'14:15','end'=>'16:15'],
+                3 => ['start'=>'16:30','end'=>'18:30'],
+            ],
+        ];
+        
         foreach ($created as $idx => $stu) {
             $studentRef = $stu->reference;
             $studentTimetable = $timetableInput[$idx] ?? [];
-            // studentTimetable: dayIndex=>[slotIndex=>subject]
-            foreach ($studentTimetable as $dayIndex => $slots) {
+            $period = $admission['period'] ?? 'weekly'; // Get period from admission form
+            
+            // studentTimetable: dayString=>[slotIndex=>subject]
+            foreach ($studentTimetable as $dayString => $slots) {
+                // Convert day string to number
+                $dayNumber = $dayToNumber[$dayString] ?? null;
+                if ($dayNumber === null) continue;
+                
                 foreach ($slots as $slotIndex => $subject) {
                     if (!$subject) continue;
-                    // Map slotIndex to times
-                    $slotMap = [1=>['start'=>'12:00','end'=>'14:00'],2=>['start'=>'14:15','end'=>'16:15'],3=>['start'=>'16:45','end'=>'18:45'],4=>['start'=>'19:00','end'=>'21:00']];
-                    $s = $slotMap[$slotIndex] ?? null;
-                    if (!$s) continue;
-                    Timetable::create([
-                        'student_reference' => $studentRef,
-                        'day_of_week' => (int)$dayIndex,
-                        'start_time' => $s['start'],
-                        'end_time' => $s['end'],
-                        'subject' => $subject,
-                        'teacher_name' => null,
-                        'room' => null,
-                    ]);
+                    
+                    // Get time slot for this specific day and slot index
+                    $timeSlot = $dayTimeSlots[$dayString][$slotIndex] ?? null;
+                    if (!$timeSlot) continue;
+                    
+                    // For monthly period, create 4 weeks of entries
+                    if ($period === 'monthly') {
+                        for ($week = 1; $week <= 4; $week++) {
+                            Timetable::create([
+                                'student_reference' => $studentRef,
+                                'day_of_week' => $dayNumber,
+                                'start_time' => $timeSlot['start'],
+                                'end_time' => $timeSlot['end'],
+                                'subject' => $subject,
+                                'teacher_name' => null,
+                                'room' => null,
+                                'period' => $period,
+                                'week_number' => $week,
+                            ]);
+                        }
+                    } else {
+                        // Weekly period - single entry
+                        Timetable::create([
+                            'student_reference' => $studentRef,
+                            'day_of_week' => $dayNumber,
+                            'start_time' => $timeSlot['start'],
+                            'end_time' => $timeSlot['end'],
+                            'subject' => $subject,
+                            'teacher_name' => null,
+                            'room' => null,
+                            'period' => $period,
+                            'week_number' => null,
+                        ]);
+                    }
                 }
             }
         }
@@ -193,49 +273,10 @@ class StudentController extends Controller
         // Clear session & finish
         $request->session()->forget('admission');
 
-        return redirect()->route('students.create')->with('status', 'Admission saved: '.count($created).' record(s) created. Ref '.$reference);
-    }
+        // Clear session & redirect to print page
+        $request->session()->forget('admission');
 
-    public function edit(Student $student)
-    {
-        return view('students.edit', compact('student'));
-    }
-
-    public function update(Request $request, Student $student)
-    {
-        $data = $request->validate([
-            'reference' => 'required|string|max:255',
-            'first_name' => 'required|string|max:100',
-            'last_name' => 'required|string|max:100',
-            'gender' => 'nullable|in:male,female,other',
-            'dob' => 'nullable|date',
-            'guardian_name' => 'nullable|string|max:120',
-            'guardian_phone' => 'nullable|string|max:120',
-            'guardian_email' => 'nullable|email|max:50',
-            'guardian_address' => 'nullable|string|max:190',
-            'guardian_city' => 'nullable|string|max:120',
-            'city' => 'nullable|string|max:120',
-            'enroll_date' => 'nullable|date',
-            'start_date' => 'nullable|date',
-            'deposit' => 'nullable|numeric',
-            'payment' => 'nullable|numeric',
-            'period' => 'nullable|string|max:32',
-            'post_code' => 'nullable|string|max:120',
-        ]);
-
-        $student->update($data);
-
-        return redirect()->route('students.index')->with('status', 'Student updated successfully.');
-    }
-
-    public function destroy(Student $student)
-    {
-        // Remove related timetable entries
-        Timetable::where('student_reference', $student->reference)->delete();
-        
-        // Remove the student
-        $student->delete();
-
-        return redirect()->route('students.index')->with('status', 'Student deleted successfully.');
+        return redirect()->route('student.timetable.print', ['reference' => $reference])
+            ->with('status', 'Admission saved: '.count($created).' record(s) created. Ref '.$reference);
     }
 }
