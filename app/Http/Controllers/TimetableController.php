@@ -37,20 +37,48 @@ class TimetableController extends Controller {
             $period = $timetableEntries->first()->period;
         }
 
-        // Build structured timetable grid based on period
-        $timetableGrid = $this->buildTimetableGrid($timetableEntries, $period);
+        // Check if we have siblings (multiple students with same reference)
+        $hasSiblings = $students->count() > 1;
         
-        // Check if we have any filled entries
-        $hasEntries = $timetableEntries->count() > 0;
+        // Check if timetable entries have student_id (new data vs old data)
+        $hasStudentIds = $timetableEntries->where('student_id', '!=', null)->count() > 0;
+        
+        // Build timetable grids per student if we have siblings AND student_id data
+        if ($hasSiblings && $hasStudentIds) {
+            // Group timetables by student
+            $studentTimetables = [];
+            foreach ($students as $student) {
+                $studentEntries = $timetableEntries->where('student_id', $student->id);
+                $studentTimetables[] = [
+                    'student' => $student,
+                    'entries' => $studentEntries,
+                    'grid' => $this->buildTimetableGrid($studentEntries, $period),
+                    'hasEntries' => $studentEntries->count() > 0
+                ];
+            }
+            
+            return view('students.timetable_print', [
+                'reference' => $reference,
+                'students' => $students,
+                'studentTimetables' => $studentTimetables, // Separate timetables per student
+                'hasSiblings' => true,
+                'period' => $period
+            ]);
+        } else {
+            // Fall back to combined timetable (for old data or single student)
+            $timetableGrid = $this->buildTimetableGrid($timetableEntries, $period);
+            $hasEntries = $timetableEntries->count() > 0;
 
-        return view('students.timetable_print', [
-            'reference' => $reference,
-            'students' => $students,
-            'timetableEntries' => $timetableEntries,
-            'timetableGrid' => $timetableGrid,
-            'hasEntries' => $hasEntries,
-            'period' => $period
-        ]);
+            return view('students.timetable_print', [
+                'reference' => $reference,
+                'students' => $students,
+                'timetableEntries' => $timetableEntries,
+                'timetableGrid' => $timetableGrid,
+                'hasEntries' => $hasEntries,
+                'hasSiblings' => false,
+                'period' => $period
+            ]);
+        }
     }
 
     private function buildTimetableGrid($timetableEntries, $period = 'weekly')

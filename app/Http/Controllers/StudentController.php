@@ -241,6 +241,7 @@ class StudentController extends Controller
                     if ($period === 'monthly') {
                         for ($week = 1; $week <= 4; $week++) {
                             Timetable::create([
+                                'student_id' => $stu->id, // Link to specific student
                                 'student_reference' => $studentRef,
                                 'day_of_week' => $dayNumber,
                                 'start_time' => $timeSlot['start'],
@@ -255,6 +256,7 @@ class StudentController extends Controller
                     } else {
                         // Weekly period - single entry
                         Timetable::create([
+                            'student_id' => $stu->id, // Link to specific student
                             'student_reference' => $studentRef,
                             'day_of_week' => $dayNumber,
                             'start_time' => $timeSlot['start'],
