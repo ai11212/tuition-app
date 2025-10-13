@@ -55,8 +55,9 @@
           <td class="px-3 py-3">{{ $student->guardian_phone }}</td>
           <td class="px-3 py-3">£{{ number_format($student->deposit ?? 0, 2) }}</td>
           <td class="px-3 py-3">£{{ number_format($student->payment ?? 0, 2) }}</td>
-          <td class="px-3 py-3 text-right">
-            <a class="text-blue-600 hover:text-blue-800 mr-3" href="{{ route('students.edit', $student) }}">Edit</a>
+          <td class="px-3 py-3 text-right whitespace-nowrap">
+            <a class="text-green-600 hover:text-green-800 mr-3" href="{{ route('student.timetable.print', $student->reference) }}">Print Timetable</a>
+            <a class="text-blue-600 hover:text-blue-800 mr-3" href="{{ route('students.edit', $student->reference) }}">Edit</a>
             <form class="inline" method="POST" action="{{ route('students.destroy', $student) }}" 
                   onsubmit="return confirm('Are you sure you want to delete this student?')">
               @csrf 

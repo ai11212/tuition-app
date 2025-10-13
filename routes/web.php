@@ -13,14 +13,17 @@ Route::post('/logout', [AuthController::class,'logout'])->name('logout');
 Route::middleware('auth')->group(function(){
     Route::get('/', [DashboardController::class,'index'])->name('dashboard');
 
-    // Students wizard
+    // Students wizard (create)
     Route::get('/students/create', [StudentController::class,'create'])->name('students.create');
     Route::post('/students/next',   [StudentController::class,'next'])->name('students.next');
     Route::get('/students/confirm', [StudentController::class,'confirm'])->name('students.confirm');
     Route::post('/students',        [StudentController::class,'store'])->name('students.store');
+    
+    // Students list and management
     Route::get('/students',         [StudentController::class,'index'])->name('students.index');
-    Route::get('/students/{student}/edit', [StudentController::class,'edit'])->name('students.edit');
-    Route::put('/students/{student}',      [StudentController::class,'update'])->name('students.update');
+    Route::get('/students/{reference}/edit', [StudentController::class,'edit'])->name('students.edit');
+    Route::post('/students/{reference}/next-edit', [StudentController::class,'nextEdit'])->name('students.next.edit');
+    Route::put('/students/{reference}',      [StudentController::class,'update'])->name('students.update');
     Route::delete('/students/{student}',   [StudentController::class,'destroy'])->name('students.destroy');
 
     // Debug: show current admission session (authenticated)

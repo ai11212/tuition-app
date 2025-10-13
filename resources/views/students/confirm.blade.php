@@ -2,7 +2,19 @@
 
 @section('content')
 <div class="container">
-  <h2 class="mb-4">New Admission — Confirm</h2>
+  @php
+    $a = $admission ?? [];
+    $isEdit = isset($a['is_edit']) && $a['is_edit'] === true;
+  @endphp
+  
+  <h2 class="mb-4">{{ $isEdit ? 'Edit Admission' : 'New Admission' }} — Confirm</h2>
+  
+  @if($isEdit)
+    <div class="alert alert-warning">
+      <strong>Editing Mode:</strong> You are updating reference <strong>{{ $a['reference'] ?? '' }}</strong>. All existing timetable entries will be replaced with the new selections below.
+    </div>
+  @endif
+  
     {{-- DEBUG: show raw admission payload for troubleshooting --}}
     <div class="alert alert-secondary">
       <strong>Debug: admission payload</strong>
@@ -54,10 +66,13 @@
     @endforeach
   @endif
 
-  <form method="POST" action="{{ route('students.store') }}">
+  <form method="POST" action="{{ $isEdit ? route('students.update', $a['reference']) : route('students.store') }}">
     @csrf
+    @if($isEdit)
+      @method('PUT')
+    @endif
     <div class="mb-3">
-      <a href="{{ route('students.create') }}" class="btn btn-outline-secondary">Back</a>
+      <a href="{{ $isEdit ? route('students.edit', $a['reference']) : route('students.create') }}" class="btn btn-outline-secondary">Back</a>
     </div>
     {{-- Timetable selection for each student (primary + siblings) --}}
     @php

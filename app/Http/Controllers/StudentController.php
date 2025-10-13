@@ -281,4 +281,318 @@ class StudentController extends Controller
         return redirect()->route('student.timetable.print', ['reference' => $reference])
             ->with('status', 'Admission saved: '.count($created).' record(s) created. Ref '.$reference);
     }
+
+    /**
+     * Edit existing student(s) by reference - loads all siblings
+     */
+    public function edit($reference)
+    {
+        // Get all students with this reference (including siblings)
+        $students = Student::where('reference', $reference)->get();
+        
+        if ($students->isEmpty()) {
+            return redirect()->route('students.index')->with('error', 'No students found with reference: ' . $reference);
+        }
+
+        // Get timetable entries for this reference
+        $timetableEntries = Timetable::where('student_reference', $reference)
+            ->orderBy('student_id')
+            ->orderBy('day_of_week')
+            ->orderBy('start_time')
+            ->get();
+
+        // Build admission session data from existing students
+        $admissionData = [
+            'reference' => $reference,
+            'period' => $students->first()->period ?? 'weekly',
+            'count' => $students->count(),
+            'students' => []
+        ];
+
+        // Populate student data
+        foreach ($students as $index => $student) {
+            $admissionData['students'][$index] = [
+                'id' => $student->id,  // Store ID for update
+                'first_name' => $student->first_name,
+                'last_name' => $student->last_name,
+                'dob' => $student->dob,
+                'gender' => $student->gender,
+                'guardian_name' => $student->guardian_name,
+                'guardian_phone' => $student->guardian_phone,
+                'guardian_email' => $student->guardian_email,
+                'city' => $student->city,
+                'post_code' => $student->post_code,
+                'notes' => $student->notes,
+                'enroll_date' => $student->enroll_date,
+                'start_date' => $student->start_date,
+                'deposit' => $student->deposit,
+                'fee_amount' => $student->fee_amount,
+            ];
+        }
+
+        // Build timetable data structure
+        $timetableData = [];
+        foreach ($timetableEntries as $entry) {
+            // Find which student index this entry belongs to
+            $studentIndex = null;
+            foreach ($students as $idx => $student) {
+                if ($entry->student_id == $student->id) {
+                    $studentIndex = $idx;
+                    break;
+                }
+            }
+            
+            if ($studentIndex !== null) {
+                // Convert day number to string
+                $dayMap = [0 => 'Mon', 1 => 'Tue', 2 => 'Wed', 3 => 'Thu', 4 => 'Fri', 5 => 'Sat', 6 => 'Sun'];
+                $dayString = $dayMap[$entry->day_of_week] ?? null;
+                
+                if ($dayString) {
+                    // Determine slot index from start time
+                    $slotIndex = $this->getSlotIndexFromTime($entry->start_time, $dayString);
+                    
+                    if ($slotIndex !== null) {
+                        $timetableData[$studentIndex][$dayString][$slotIndex] = $entry->subject;
+                    }
+                }
+            }
+        }
+
+        $admissionData['timetable'] = $timetableData;
+        $admissionData['is_edit'] = true;  // Flag to indicate edit mode
+
+        // Store in session
+        session(['admission' => $admissionData]);
+
+        return view('students.edit', [
+            'students' => $students,
+            'reference' => $reference,
+            'admission' => $admissionData
+        ]);
+    }
+
+    /**
+     * Handle next step during edit (similar to next() but for edit mode)
+     */
+    public function nextEdit(Request $request, $reference)
+    {
+        // Validate the form data (same validation as next())
+        $validated = $request->validate([
+            'period' => 'nullable|string|in:weekly,monthly',
+            'count' => 'required|integer|min:1|max:10',
+            'students' => 'required|array',
+            'students.*.first_name' => 'required|string|max:255',
+            'students.*.last_name' => 'required|string|max:255',
+            'students.*.dob' => 'nullable|date',
+            'students.*.gender' => 'nullable|string',
+            'students.*.guardian_name' => 'nullable|string|max:255',
+            'students.*.guardian_phone' => 'nullable|string|max:50',
+            'students.*.guardian_email' => 'nullable|email|max:255',
+            'students.*.city' => 'nullable|string|max:255',
+            'students.*.post_code' => 'nullable|string|max:20',
+            'students.*.notes' => 'nullable|string',
+            'students.*.enroll_date' => 'nullable|date',
+            'students.*.start_date' => 'nullable|date',
+            'students.*.deposit' => 'nullable|numeric|min:0',
+            'students.*.fee_amount' => 'nullable|numeric|min:0',
+        ]);
+
+        // Get existing admission data from session
+        $admission = $request->session()->get('admission', []);
+        
+        // Keep the student IDs for update
+        $existingStudentIds = [];
+        foreach ($admission['students'] ?? [] as $index => $student) {
+            if (isset($student['id'])) {
+                $existingStudentIds[$index] = $student['id'];
+            }
+        }
+
+        // Merge new data with existing
+        $admission = array_merge($admission, $validated);
+        $admission['reference'] = $reference;  // Preserve reference
+        $admission['is_edit'] = true;  // Preserve edit flag
+        
+        // Restore student IDs
+        foreach ($existingStudentIds as $index => $id) {
+            $admission['students'][$index]['id'] = $id;
+        }
+
+        $request->session()->put('admission', $admission);
+
+        return redirect()->route('students.confirm');
+    }
+
+    /**
+     * Update existing student(s) and timetable
+     */
+    public function update(Request $request, $reference)
+    {
+        $admission = $request->session()->get('admission');
+        if (!$admission || empty($admission['students'])) {
+            return redirect()->route('students.index')->with('error', 'No admission data found');
+        }
+
+        // Validate that reference matches
+        if ($admission['reference'] !== $reference) {
+            return redirect()->route('students.index')->with('error', 'Reference mismatch');
+        }
+
+        $timetableInput = $admission['timetable'] ?? [];
+        $period = $admission['period'] ?? 'weekly';
+
+        // Update existing students
+        foreach ($admission['students'] as $idx => $studentData) {
+            if (isset($studentData['id'])) {
+                // Update existing student
+                $student = Student::find($studentData['id']);
+                if ($student) {
+                    $student->update([
+                        'first_name' => $studentData['first_name'] ?? null,
+                        'last_name' => $studentData['last_name'] ?? null,
+                        'dob' => $studentData['dob'] ?? null,
+                        'gender' => $studentData['gender'] ?? null,
+                        'guardian_name' => $studentData['guardian_name'] ?? null,
+                        'guardian_phone' => $studentData['guardian_phone'] ?? null,
+                        'guardian_email' => $studentData['guardian_email'] ?? null,
+                        'city' => $studentData['city'] ?? null,
+                        'post_code' => $studentData['post_code'] ?? null,
+                        'notes' => $studentData['notes'] ?? null,
+                        'enroll_date' => $studentData['enroll_date'] ?? null,
+                        'start_date' => $studentData['start_date'] ?? null,
+                        'deposit' => $studentData['deposit'] ?? 0,
+                        'fee_amount' => $studentData['fee_amount'] ?? 0,
+                        'period' => $period,
+                    ]);
+                }
+            }
+        }
+
+        // Delete all existing timetable entries for this reference
+        Timetable::where('student_reference', $reference)->delete();
+
+        // Re-create timetable entries (same logic as store())
+        $dayToNumber = [
+            'Mon' => 0, 'Tue' => 1, 'Wed' => 2, 'Thu' => 3,
+            'Fri' => 4, 'Sat' => 5, 'Sun' => 6
+        ];
+
+        $dayTimeSlots = [
+            'Mon' => [
+                0 => ['start'=>'12:00','end'=>'14:00'],
+                1 => ['start'=>'14:15','end'=>'16:15'],
+                2 => ['start'=>'16:45','end'=>'18:45'],
+                3 => ['start'=>'19:00','end'=>'21:00'],
+            ],
+            'Tue' => [
+                0 => ['start'=>'12:00','end'=>'14:00'],
+                1 => ['start'=>'14:15','end'=>'16:15'],
+                2 => ['start'=>'16:45','end'=>'18:45'],
+                3 => ['start'=>'19:00','end'=>'21:00'],
+            ],
+            'Wed' => [
+                0 => ['start'=>'12:00','end'=>'14:00'],
+                1 => ['start'=>'14:15','end'=>'16:15'],
+                2 => ['start'=>'16:45','end'=>'18:45'],
+                3 => ['start'=>'19:00','end'=>'21:00'],
+            ],
+            'Thu' => [
+                0 => ['start'=>'12:00','end'=>'14:00'],
+                1 => ['start'=>'14:15','end'=>'16:15'],
+                2 => ['start'=>'16:45','end'=>'18:45'],
+                3 => ['start'=>'19:00','end'=>'21:00'],
+            ],
+            'Fri' => [
+                0 => ['start'=>'09:00','end'=>'11:00'],
+                1 => ['start'=>'11:15','end'=>'13:15'],
+                2 => ['start'=>'16:45','end'=>'18:45'],
+                3 => ['start'=>'19:00','end'=>'21:00'],
+            ],
+            'Sat' => [
+                0 => ['start'=>'09:00','end'=>'11:00'],
+                1 => ['start'=>'11:15','end'=>'13:15'],
+                2 => ['start'=>'14:15','end'=>'16:15'],
+                3 => ['start'=>'16:30','end'=>'18:30'],
+            ],
+            'Sun' => [
+                0 => ['start'=>'09:00','end'=>'11:00'],
+                1 => ['start'=>'11:15','end'=>'13:15'],
+                2 => ['start'=>'14:15','end'=>'16:15'],
+                3 => ['start'=>'16:30','end'=>'18:30'],
+            ],
+        ];
+
+        // Get updated students from database
+        $updatedStudents = Student::where('reference', $reference)->orderBy('id')->get();
+
+        foreach ($updatedStudents as $idx => $stu) {
+            $studentTimetable = $timetableInput[$idx] ?? [];
+
+            foreach ($studentTimetable as $dayString => $slots) {
+                $dayNumber = $dayToNumber[$dayString] ?? null;
+                if ($dayNumber === null) continue;
+
+                foreach ($slots as $slotIndex => $subject) {
+                    if (!$subject) continue;
+
+                    $timeSlot = $dayTimeSlots[$dayString][$slotIndex] ?? null;
+                    if (!$timeSlot) continue;
+
+                    if ($period === 'monthly') {
+                        for ($week = 1; $week <= 4; $week++) {
+                            Timetable::create([
+                                'student_id' => $stu->id,
+                                'student_reference' => $reference,
+                                'day_of_week' => $dayNumber,
+                                'start_time' => $timeSlot['start'],
+                                'end_time' => $timeSlot['end'],
+                                'subject' => $subject,
+                                'teacher_name' => null,
+                                'room' => null,
+                                'period' => $period,
+                                'week_number' => $week,
+                            ]);
+                        }
+                    } else {
+                        Timetable::create([
+                            'student_id' => $stu->id,
+                            'student_reference' => $reference,
+                            'day_of_week' => $dayNumber,
+                            'start_time' => $timeSlot['start'],
+                            'end_time' => $timeSlot['end'],
+                            'subject' => $subject,
+                            'teacher_name' => null,
+                            'room' => null,
+                            'period' => $period,
+                            'week_number' => null,
+                        ]);
+                    }
+                }
+            }
+        }
+
+        // Clear session
+        $request->session()->forget('admission');
+
+        return redirect()->route('students.index')
+            ->with('status', 'Student(s) updated successfully. Reference: ' . $reference);
+    }
+
+    /**
+     * Helper: Get slot index from time and day
+     */
+    private function getSlotIndexFromTime($startTime, $dayString)
+    {
+        $timeMap = [
+            'Mon' => ['12:00:00' => 0, '14:15:00' => 1, '16:45:00' => 2, '19:00:00' => 3],
+            'Tue' => ['12:00:00' => 0, '14:15:00' => 1, '16:45:00' => 2, '19:00:00' => 3],
+            'Wed' => ['12:00:00' => 0, '14:15:00' => 1, '16:45:00' => 2, '19:00:00' => 3],
+            'Thu' => ['12:00:00' => 0, '14:15:00' => 1, '16:45:00' => 2, '19:00:00' => 3],
+            'Fri' => ['09:00:00' => 0, '11:15:00' => 1, '16:45:00' => 2, '19:00:00' => 3],
+            'Sat' => ['09:00:00' => 0, '11:15:00' => 1, '14:15:00' => 2, '16:30:00' => 3],
+            'Sun' => ['09:00:00' => 0, '11:15:00' => 1, '14:15:00' => 2, '16:30:00' => 3],
+        ];
+
+        return $timeMap[$dayString][$startTime] ?? null;
+    }
 }
