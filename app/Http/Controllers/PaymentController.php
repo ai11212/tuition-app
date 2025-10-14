@@ -18,9 +18,6 @@ class PaymentController extends Controller
         $to   = $r->input('to','');
 
         $hasPaidAt = Schema::hasColumn('payment_transactions','paid_at');
-        $orderExpr = $hasPaidAt
-            ? 'payment_transactions.paid_at'
-            : 'CONCAT(payment_transactions.paid_on," 00:00:00")';
 
         $q = PaymentTransaction::query()
             ->leftJoin('invoices','payment_transactions.invoice_id','=','invoices.id')
@@ -47,9 +44,16 @@ class PaymentController extends Controller
             });
         }
 
-    $payments = $q->orderBy(DB::raw($orderExpr),'desc')
-              ->orderBy('payment_transactions.id','desc')
-              ->paginate(25)->withQueryString();
+        // Order by date (prefer paid_at if exists, fallback to paid_on) then by ID
+        if ($hasPaidAt) {
+            $payments = $q->orderByRaw('COALESCE(payment_transactions.paid_at, payment_transactions.paid_on) DESC')
+                          ->orderBy('payment_transactions.id','desc')
+                          ->paginate(25)->withQueryString();
+        } else {
+            $payments = $q->orderBy('payment_transactions.paid_on','desc')
+                          ->orderBy('payment_transactions.id','desc')
+                          ->paginate(25)->withQueryString();
+        }
 
         // If a reference filter was provided, also load matching students so
         // the 'take' form can show student-specific inputs immediately.
@@ -224,7 +228,7 @@ class PaymentController extends Controller
 
         $hasPaidAt = Schema::hasColumn('payment_transactions','paid_at');
 
-        $rows = PaymentTransaction::query()
+        $query = PaymentTransaction::query()
             ->leftJoin('invoices','payment_transactions.invoice_id','=','invoices.id')
             ->leftJoin('students','invoices.student_id','=','students.id')
             ->when($ref!=='' , fn($q)=>$q->where('students.reference','LIKE',$ref.'%'))
@@ -235,11 +239,16 @@ class PaymentController extends Controller
             ->when($to      , fn($q) => $q->where(function($qq) use($to,$hasPaidAt){
                 if ($hasPaidAt) $qq->whereDate('payment_transactions.paid_at','<=',$to);
                 $qq->orWhereDate('payment_transactions.paid_on','<=',$to);
-            }))
-            ->orderBy(DB::raw($hasPaidAt
-                ? 'payment_transactions.paid_at'
-                : 'CONCAT(payment_transactions.paid_on," 00:00:00")'),'desc')
-            ->orderBy('payment_transactions.id','desc')
+            }));
+
+        // Order by date then by ID
+        if ($hasPaidAt) {
+            $query->orderByRaw('COALESCE(payment_transactions.paid_at, payment_transactions.paid_on) DESC');
+        } else {
+            $query->orderBy('payment_transactions.paid_on','desc');
+        }
+        
+        $rows = $query->orderBy('payment_transactions.id','desc')
             ->get([
                 'students.reference as Reference',
                 DB::raw("CONCAT(COALESCE(students.first_name,''),' ',COALESCE(students.last_name,'')) as Student"),
@@ -271,11 +280,8 @@ class PaymentController extends Controller
         $to   = $r->input('to','');
 
         $hasPaidAt = Schema::hasColumn('payment_transactions','paid_at');
-        $orderExpr = $hasPaidAt
-            ? 'payment_transactions.paid_at'
-            : 'CONCAT(payment_transactions.paid_on," 00:00:00")';
 
-        $payments = PaymentTransaction::query()
+        $query = PaymentTransaction::query()
             ->leftJoin('invoices','payment_transactions.invoice_id','=','invoices.id')
             ->leftJoin('students','invoices.student_id','=','students.id')
             ->when($ref!=='' , fn($q)=>$q->where('students.reference','LIKE',$ref.'%'))
@@ -286,9 +292,16 @@ class PaymentController extends Controller
             ->when($to      , fn($q)=>$q->where(function($qq) use($to,$hasPaidAt){
                 if ($hasPaidAt) $qq->whereDate('payment_transactions.paid_at','<=',$to);
                 $qq->orWhereDate('payment_transactions.paid_on','<=',$to);
-            }))
-            ->orderBy(DB::raw($orderExpr),'desc')
-            ->orderBy('payment_transactions.id','desc')
+            }));
+
+        // Order by date then by ID
+        if ($hasPaidAt) {
+            $query->orderByRaw('COALESCE(payment_transactions.paid_at, payment_transactions.paid_on) DESC');
+        } else {
+            $query->orderBy('payment_transactions.paid_on','desc');
+        }
+        
+        $payments = $query->orderBy('payment_transactions.id','desc')
             ->get([
                 'payment_transactions.*',
                 'invoices.reference as invoice_ref',
