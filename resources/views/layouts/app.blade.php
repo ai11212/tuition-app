@@ -58,7 +58,7 @@
       <li><a href="/payments" class="block px-3 py-2 rounded hover:bg-gray-100 {{ request()->is('payments') ? 'active' : '' }}">💳 Take Payment</a></li>
       <li><a href="/defaulters" class="block px-3 py-2 rounded hover:bg-gray-100 {{ request()->is('defaulters') ? 'active' : '' }}">⚠️ Defaulter List</a></li>
       <li><a href="/accounts" class="block px-3 py-2 rounded hover:bg-gray-100 {{ request()->is('accounts') ? 'active' : '' }}">🧾 Accounts Summary</a></li>
-      <li><a href="/expenses/new" class="block px-3 py-2 rounded hover:bg-gray-100 {{ request()->is('expenses/new') ? 'active' : '' }}">💸 Add Expense</a></li>
+      <li><a href="/expenses" class="block px-3 py-2 rounded hover:bg-gray-100 {{ request()->is('expenses') ? 'active' : '' }}">💸 Expenses</a></li>
     </ul>
 
     <div class="text-xs uppercase tracking-wider text-gray-400 px-2 mt-5 mb-2">Library & Reference</div>

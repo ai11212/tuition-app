@@ -185,6 +185,7 @@ class PaymentController extends Controller
             'reference'   => 'required|string',
             'amount'      => 'required|numeric|min:0.01',
             'method'      => 'required|string', // Cash|Card|Bank
+            'purpose'     => 'nullable|string|in:tuition,books,deposit,other',
             'paid_at'     => 'nullable|date',
             'period_from' => 'nullable|date',
             'period_to'   => 'nullable|date',
@@ -206,7 +207,7 @@ class PaymentController extends Controller
             'status'     => 'paid',
         ]);
 
-        PaymentTransaction::create([
+        $transactionData = [
             'invoice_id' => $inv->id,
             'paid_on'    => $data['paid_at'] ? date('Y-m-d', strtotime($data['paid_at'])) : now()->toDateString(),
             // set paid_at only if the column exists (shared hosting safety)
@@ -214,7 +215,14 @@ class PaymentController extends Controller
             'amount'     => $data['amount'],
             'method'     => $data['method'],
             'notes'      => $data['notes'] ?? null,
-        ]);
+        ];
+        
+        // Add purpose if column exists (backward compatibility)
+        if (Schema::hasColumn('payment_transactions','purpose')) {
+            $transactionData['purpose'] = $data['purpose'] ?? 'tuition';
+        }
+        
+        PaymentTransaction::create($transactionData);
 
         // After creating an invoice+transaction, redirect to the invoice print page
         return redirect()->route('invoice.print', $inv->id);
@@ -337,8 +345,29 @@ class PaymentController extends Controller
         $inCard  = PaymentTransaction::whereBetween('paid_on',[$from,$to])->where('method','Card')->sum('amount');
         $inBank  = PaymentTransaction::whereBetween('paid_on',[$from,$to])->whereIn('method',['Bank','Transfer'])->sum('amount');
 
+        // Payment breakdown by purpose (if column exists)
+        $paymentBreakdown = [];
+        if (Schema::hasColumn('payment_transactions','purpose')) {
+            $paymentBreakdown = [
+                'tuition' => PaymentTransaction::whereBetween('paid_on',[$from,$to])->where('purpose','tuition')->sum('amount'),
+                'books'   => PaymentTransaction::whereBetween('paid_on',[$from,$to])->where('purpose','books')->sum('amount'),
+                'deposit' => PaymentTransaction::whereBetween('paid_on',[$from,$to])->where('purpose','deposit')->sum('amount'),
+                'other'   => PaymentTransaction::whereBetween('paid_on',[$from,$to])->where('purpose','other')->sum('amount'),
+            ];
+        }
+
         $outTotal = class_exists(Expense::class)
             ? Expense::whereBetween('expense_on',[$from,$to])->sum('amount') : 0;
+
+        // Expense breakdown by category
+        $expensesByCategory = [];
+        if (class_exists(Expense::class)) {
+            $expensesByCategory = Expense::selectRaw('category, SUM(amount) as total')
+                ->whereBetween('expense_on', [$from, $to])
+                ->groupBy('category')
+                ->pluck('total', 'category')
+                ->toArray();
+        }
 
         $net = $inTotal - $outTotal;
 
@@ -356,7 +385,7 @@ class PaymentController extends Controller
         $breakdown   = ['cash'=>$inCash,'card'=>$inCard,'bank'=>$inBank];
 
         return view('finance.summary', compact(
-            'from','to','inTotal','outTotal','net','breakdown','daily','weekly','monthly','invoices','outstanding'
+            'from','to','inTotal','outTotal','net','breakdown','paymentBreakdown','expensesByCategory','daily','weekly','monthly','invoices','outstanding'
         ));
     }
 }

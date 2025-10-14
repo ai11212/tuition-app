@@ -80,5 +80,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/payments/export', [\App\Http\Controllers\PaymentController::class,'exportCsv'])->name('payments.export');
     Route::get('/payments/print',  [\App\Http\Controllers\PaymentController::class,'print'])->name('payments.print');
     Route::get('/accounts',        [\App\Http\Controllers\PaymentController::class,'summary'])->name('accounts.summary');
+    Route::get('/payment-verification', [\App\Http\Controllers\PaymentVerificationController::class,'index'])->name('payment.verification');
 
+    // Expenses
+    Route::get('/expenses',         [\App\Http\Controllers\ExpenseController::class,'index'])->name('expenses');
+    Route::post('/expenses',        [\App\Http\Controllers\ExpenseController::class,'store'])->name('expenses.store');
+    Route::delete('/expenses/{id}', [\App\Http\Controllers\ExpenseController::class,'destroy'])->name('expenses.destroy');
+    Route::get('/expenses/export',  [\App\Http\Controllers\ExpenseController::class,'exportCsv'])->name('expenses.export');
 });

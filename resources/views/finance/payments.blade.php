@@ -5,6 +5,9 @@
   <div class="flex items-center justify-between mb-4">
     <h1 class="text-2xl font-semibold">Payments</h1>
     <div class="flex gap-2">
+      <a href="{{ route('expenses') }}" class="px-3 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 text-sm flex items-center gap-1">
+        💸 Expenses
+      </a>
       <a href="{{ route('payments.export', request()->only('ref','from','to')) }}" class="px-3 py-2 rounded-lg border bg-white hover:bg-gray-50 text-sm">Export CSV</a>
       <a href="{{ route('payments.print', request()->only('ref','from','to')) }}" target="_blank" class="px-3 py-2 rounded-lg border bg-white hover:bg-gray-50 text-sm">Print</a>
     </div>
@@ -200,7 +203,18 @@
           <option>Transfer</option>
         </select>
       </div>
-      <div class="md:col-span-2">
+      @if(Schema::hasColumn('payment_transactions', 'purpose'))
+      <div class="md:col-span-1">
+        <label class="text-sm text-gray-600">Purpose</label>
+        <select name="purpose" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
+          <option value="tuition" {{ old('purpose') == 'tuition' ? 'selected' : '' }}>Tuition Fee</option>
+          <option value="books" {{ old('purpose') == 'books' ? 'selected' : '' }}>Book Payment</option>
+          <option value="deposit" {{ old('purpose') == 'deposit' ? 'selected' : '' }}>Deposit</option>
+          <option value="other" {{ old('purpose') == 'other' ? 'selected' : '' }}>Other</option>
+        </select>
+      </div>
+      @endif
+      <div class="md:col-span-1">
         <label class="text-sm text-gray-600">Paid at</label>
         <input type="date" name="paid_at" value="{{ old('paid_at', date('Y-m-d')) }}" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
       </div>

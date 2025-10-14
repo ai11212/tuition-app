@@ -31,6 +31,13 @@
   <button class="px-4 py-2 rounded bg-indigo-600 text-white">Apply</button>
 </form>
 
+<div class="flex justify-between items-center mb-4">
+  <div></div>
+  <a href="{{ route('payment.verification') }}" class="px-4 py-2 rounded-lg border bg-white hover:bg-gray-50 text-sm">
+    📊 Payment Verification
+  </a>
+</div>
+
 <div class="grid md:grid-cols-3 gap-4 mb-6">
   <div class="p-4 rounded-xl border bg-white">
     <div class="text-sm text-gray-600">Money In</div>
@@ -54,6 +61,64 @@
     <div class="text-xs text-gray-600 mt-2">In − Out</div>
   </div>
 </div>
+
+{{-- Payment Breakdown by Purpose --}}
+@if(isset($paymentBreakdown) && !empty($paymentBreakdown))
+<div class="mb-6 bg-white border rounded-xl p-4">
+  <div class="font-semibold mb-3">💰 Payment Breakdown by Type</div>
+  <div class="grid md:grid-cols-4 gap-4">
+    <div class="p-3 bg-blue-50 rounded-lg">
+      <div class="text-xs text-blue-700">Tuition Fees</div>
+      <div class="text-2xl font-semibold text-blue-900">£{{ number_format((float)($paymentBreakdown['tuition'] ?? 0), 2) }}</div>
+      @if($inTotal > 0)
+        <div class="text-xs text-blue-600 mt-1">{{ round((($paymentBreakdown['tuition'] ?? 0) / $inTotal) * 100, 1) }}% of total</div>
+      @endif
+    </div>
+    <div class="p-3 bg-green-50 rounded-lg">
+      <div class="text-xs text-green-700">Book Payments</div>
+      <div class="text-2xl font-semibold text-green-900">£{{ number_format((float)($paymentBreakdown['books'] ?? 0), 2) }}</div>
+      @if($inTotal > 0)
+        <div class="text-xs text-green-600 mt-1">{{ round((($paymentBreakdown['books'] ?? 0) / $inTotal) * 100, 1) }}% of total</div>
+      @endif
+    </div>
+    <div class="p-3 bg-purple-50 rounded-lg">
+      <div class="text-xs text-purple-700">Deposits</div>
+      <div class="text-2xl font-semibold text-purple-900">£{{ number_format((float)($paymentBreakdown['deposit'] ?? 0), 2) }}</div>
+      @if($inTotal > 0)
+        <div class="text-xs text-purple-600 mt-1">{{ round((($paymentBreakdown['deposit'] ?? 0) / $inTotal) * 100, 1) }}% of total</div>
+      @endif
+    </div>
+    <div class="p-3 bg-gray-50 rounded-lg">
+      <div class="text-xs text-gray-700">Other</div>
+      <div class="text-2xl font-semibold text-gray-900">£{{ number_format((float)($paymentBreakdown['other'] ?? 0), 2) }}</div>
+      @if($inTotal > 0)
+        <div class="text-xs text-gray-600 mt-1">{{ round((($paymentBreakdown['other'] ?? 0) / $inTotal) * 100, 1) }}% of total</div>
+      @endif
+    </div>
+  </div>
+</div>
+@endif
+
+{{-- Expense Breakdown by Category --}}
+@if(isset($expensesByCategory) && !empty($expensesByCategory))
+<div class="mb-6 bg-white border rounded-xl p-4">
+  <div class="flex justify-between items-center mb-3">
+    <div class="font-semibold">💸 Expense Breakdown by Category</div>
+    <a href="/expenses?from={{ $from }}&to={{ $to }}" class="text-sm text-blue-600 hover:underline">View Details →</a>
+  </div>
+  <div class="grid md:grid-cols-4 gap-3">
+    @foreach($expensesByCategory as $category => $total)
+      <div class="p-3 bg-red-50 rounded-lg border border-red-100">
+        <div class="text-xs text-red-700">{{ $category }}</div>
+        <div class="text-xl font-semibold text-red-900">£{{ number_format((float)$total, 2) }}</div>
+        @if($outTotal > 0)
+          <div class="text-xs text-red-600 mt-1">{{ round(($total / $outTotal) * 100, 1) }}% of expenses</div>
+        @endif
+      </div>
+    @endforeach
+  </div>
+</div>
+@endif
 
 {{-- Daily Cash Flow --}}
 <div class="mb-6 bg-white border rounded-xl overflow-hidden">
