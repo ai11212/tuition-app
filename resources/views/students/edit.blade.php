@@ -128,12 +128,27 @@
                         <input type="date" name="students[{{ $index }}][start_date]" class="form-control" 
                                value="{{ old('students.'.$index.'.start_date', $student->start_date) }}">
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label">Deposit (£)</label>
                         <input type="number" step="0.01" min="0" name="students[{{ $index }}][deposit]" class="form-control" 
                                value="{{ old('students.'.$index.'.deposit', $student->deposit) }}">
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
+                        <label class="form-label">Deposit Paid?</label>
+                        <div class="d-flex gap-3 mt-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="students[{{ $index }}][deposit_paid]" id="deposit_yes_{{ $index }}" value="1" 
+                                       {{ old('students.'.$index.'.deposit_paid', $student->deposit_paid) == '1' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="deposit_yes_{{ $index }}">Yes</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="students[{{ $index }}][deposit_paid]" id="deposit_no_{{ $index }}" value="0" 
+                                       {{ old('students.'.$index.'.deposit_paid', $student->deposit_paid) == '0' || old('students.'.$index.'.deposit_paid', $student->deposit_paid) === null ? 'checked' : '' }}>
+                                <label class="form-check-label" for="deposit_no_{{ $index }}">No</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
                         <label class="form-label">Payment (£)</label>
                         <input type="number" step="0.01" min="0" name="students[{{ $index }}][fee_amount]" class="form-control" 
                                value="{{ old('students.'.$index.'.fee_amount', $student->fee_amount) }}">

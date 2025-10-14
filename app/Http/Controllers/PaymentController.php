@@ -147,6 +147,11 @@ class PaymentController extends Controller
                 $paymentsForBooks = max(0, $totalPaid - ($exactStudent->deposit ?? 0));
                 $bookPaymentsPending = max(0, $totalBookPrice - $paymentsForBooks);
                 
+                // Calculate total payment pending
+                // Payment Pending = (Student Payment + Total Book Price) - Total Paid
+                $expectedTotal = ($exactStudent->payment ?? 0) + $totalBookPrice;
+                $paymentPending = max(0, $expectedTotal - $totalPaid);
+                
                 $studentDetails = [
                     'student' => $exactStudent,
                     'total_paid' => $totalPaid,
@@ -158,7 +163,10 @@ class PaymentController extends Controller
                     'payments_for_books' => $paymentsForBooks,
                     'book_payments_pending' => $bookPaymentsPending,
                     'deposit' => $exactStudent->deposit ?? 0,
-                    'payment' => $exactStudent->payment ?? 0
+                    'deposit_paid' => $exactStudent->deposit_paid ?? false,
+                    'payment' => $exactStudent->payment ?? 0,
+                    'expected_total' => $expectedTotal,
+                    'payment_pending' => $paymentPending
                 ];
             }
         }

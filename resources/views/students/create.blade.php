@@ -102,11 +102,24 @@
                         <label class="form-label">Start date</label>
                         <input type="date" name="start_date" class="form-control" value="{{ old('start_date') }}">
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label">Deposit</label>
                         <input type="number" step="0.01" min="0" name="deposit" class="form-control" value="{{ old('deposit') }}">
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
+                        <label class="form-label">Deposit Paid?</label>
+                        <div class="d-flex gap-3 mt-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="deposit_paid" id="deposit_yes" value="1" {{ old('deposit_paid') == '1' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="deposit_yes">Yes</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="deposit_paid" id="deposit_no" value="0" {{ old('deposit_paid') == '0' || old('deposit_paid') === null ? 'checked' : '' }}>
+                                <label class="form-check-label" for="deposit_no">No</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
                         <label class="form-label">Payment</label>
                         <input type="number" step="0.01" min="0" name="payment" class="form-control" value="{{ old('payment') }}">
                     </div>

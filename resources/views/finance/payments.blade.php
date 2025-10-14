@@ -45,18 +45,34 @@
         <div>
           <span class="text-blue-700 font-medium">Deposit:</span><br>
           <span class="text-lg font-semibold text-green-700">£{{ number_format($studentDetails['deposit'], 2) }}</span>
+          <span class="ms-2 badge {{ $studentDetails['deposit_paid'] ? 'bg-success' : 'bg-secondary' }}">
+            {{ $studentDetails['deposit_paid'] ? 'Yes' : 'No' }}
+          </span>
         </div>
         <div>
           <span class="text-blue-700 font-medium">Payment:</span><br>
           <span class="text-lg font-semibold text-green-700">£{{ number_format($studentDetails['payment'], 2) }}</span>
         </div>
       </div>
-      <div class="grid md:grid-cols-2 gap-4 mt-4 text-sm">
+      <div class="grid md:grid-cols-3 gap-4 mt-4 text-sm">
         <div>
           <span class="text-blue-700 font-medium">Total Payments Made:</span><br>
           <span class="text-lg font-semibold text-green-700">£{{ number_format($studentDetails['total_paid'], 2) }}</span>
           <div class="text-xs text-blue-600 mt-1">
-            Payments for books: £{{ number_format($studentDetails['payments_for_books'], 2) }}
+            Expected: £{{ number_format($studentDetails['expected_total'], 2) }}
+          </div>
+        </div>
+        <div>
+          <span class="text-blue-700 font-medium">Payment Pending:</span><br>
+          <span class="text-lg font-semibold {{ $studentDetails['payment_pending'] > 0 ? 'text-orange-600' : 'text-green-700' }}">
+            £{{ number_format($studentDetails['payment_pending'], 2) }}
+          </span>
+          <div class="text-xs text-blue-600 mt-1">
+            @if($studentDetails['payment_pending'] == 0)
+              Fully paid ✓
+            @else
+              Outstanding amount
+            @endif
           </div>
         </div>
         <div>
