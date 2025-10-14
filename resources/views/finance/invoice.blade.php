@@ -1,5 +1,3 @@
-@extends('layouts.app')
-@section('content')
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,6 +14,37 @@
             font-family: Arial, sans-serif;
             padding: 20px;
             background: #f5f5f5;
+        }
+        .action-buttons {
+            max-width: 800px;
+            margin: 0 auto 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        .btn-back {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-back:hover {
+            background: #5a6268;
+        }
+        .btn-print {
+            background: #007bff;
+            color: white;
+        }
+        .btn-print:hover {
+            background: #0056b3;
         }
         .invoice-container {
             max-width: 800px;
@@ -41,6 +70,7 @@
         }
         .section {
             margin-bottom: 25px;
+            page-break-inside: avoid;
         }
         .section-title {
             font-size: 16px;
@@ -67,6 +97,7 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
+            page-break-inside: avoid;
         }
         table th {
             background: #f8f8f8;
@@ -88,39 +119,39 @@
             background: #f8f8f8;
             border-radius: 5px;
         }
-        .print-btn {
-            display: block;
-            width: 150px;
-            margin: 30px auto 0;
-            padding: 12px 24px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            text-align: center;
-        }
-        .print-btn:hover {
-            background: #0056b3;
-        }
         
         @media print {
             body {
                 background: white;
                 padding: 0;
             }
+            .action-buttons {
+                display: none;
+            }
             .invoice-container {
                 box-shadow: none;
                 padding: 20px;
+                max-width: 100%;
             }
-            .print-btn {
-                display: none;
+            .section {
+                page-break-inside: avoid;
             }
+            table {
+                page-break-inside: avoid;
+            }
+        }
+        
+        @page {
+            size: A4;
+            margin: 15mm;
         }
     </style>
 </head>
 <body>
+    <div class="action-buttons">
+        <a href="{{ route('payments') }}" class="btn btn-back">← Back to Payments</a>
+        <button onclick="window.print()" class="btn btn-print">🖨️ Print Invoice</button>
+    </div>
     <div class="invoice-container">
         <div class="invoice-header">
             <h1>INVOICE</h1>
@@ -209,9 +240,6 @@
         <div class="amount-total">
             Total Amount: £{{ number_format($invoice->amount, 2) }}
         </div>
-
-        <button onclick="window.print()" class="print-btn">Print Invoice</button>
     </div>
 </body>
 </html>
-@endsection

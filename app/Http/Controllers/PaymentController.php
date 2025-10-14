@@ -48,6 +48,7 @@ class PaymentController extends Controller
         }
 
     $payments = $q->orderBy(DB::raw($orderExpr),'desc')
+              ->orderBy('payment_transactions.id','desc')
               ->paginate(25)->withQueryString();
 
         // If a reference filter was provided, also load matching students so
@@ -177,19 +178,25 @@ class PaymentController extends Controller
     /** Store a payment */
     public function store(Request $r){
         $data = $r->validate([
-            'reference' => 'required|string',
-            'amount'    => 'required|numeric|min:0.01',
-            'method'    => 'required|string', // Cash|Card|Bank
-            'paid_at'   => 'nullable|date',
-            'notes'     => 'nullable|string',
+            'reference'   => 'required|string',
+            'amount'      => 'required|numeric|min:0.01',
+            'method'      => 'required|string', // Cash|Card|Bank
+            'paid_at'     => 'nullable|date',
+            'period_from' => 'nullable|date',
+            'period_to'   => 'nullable|date',
+            'notes'       => 'nullable|string',
         ]);
         $student = Student::where('reference',$data['reference'])->firstOrFail();
+
+        // Use provided period dates or default to current date
+        $periodFrom = $data['period_from'] ?? now()->toDateString();
+        $periodTo = $data['period_to'] ?? now()->toDateString();
 
         $inv = Invoice::create([
             'student_id' => $student->id,
             'reference'  => 'INV-'.Str::upper(Str::random(6)),
-            'period_from'=> now()->toDateString(),
-            'period_to'  => now()->toDateString(),
+            'period_from'=> $periodFrom,
+            'period_to'  => $periodTo,
             'amount'     => $data['amount'],
             'balance'    => 0,
             'status'     => 'paid',
@@ -232,6 +239,7 @@ class PaymentController extends Controller
             ->orderBy(DB::raw($hasPaidAt
                 ? 'payment_transactions.paid_at'
                 : 'CONCAT(payment_transactions.paid_on," 00:00:00")'),'desc')
+            ->orderBy('payment_transactions.id','desc')
             ->get([
                 'students.reference as Reference',
                 DB::raw("CONCAT(COALESCE(students.first_name,''),' ',COALESCE(students.last_name,'')) as Student"),
@@ -280,6 +288,7 @@ class PaymentController extends Controller
                 $qq->orWhereDate('payment_transactions.paid_on','<=',$to);
             }))
             ->orderBy(DB::raw($orderExpr),'desc')
+            ->orderBy('payment_transactions.id','desc')
             ->get([
                 'payment_transactions.*',
                 'invoices.reference as invoice_ref',

@@ -579,6 +579,57 @@ class StudentController extends Controller
     }
 
     /**
+     * Delete a student by reference (deletes all siblings with same reference)
+     */
+    public function destroy($reference)
+    {
+        try {
+            // Get all students with this reference (including siblings)
+            $students = Student::where('reference', $reference)->get();
+            
+            if ($students->isEmpty()) {
+                return redirect()->route('students.index')
+                    ->with('error', 'Student not found with reference: ' . $reference);
+            }
+
+            $count = $students->count();
+            
+            // Delete related timetable entries
+            Timetable::where('student_reference', $reference)->delete();
+            
+            // Delete related invoices and payment transactions
+            foreach ($students as $student) {
+                // Get invoices for this student
+                $invoices = \App\Models\Invoice::where('student_id', $student->id)->get();
+                
+                foreach ($invoices as $invoice) {
+                    // Delete payment transactions for this invoice
+                    \App\Models\PaymentTransaction::where('invoice_id', $invoice->id)->delete();
+                }
+                
+                // Delete invoices
+                \App\Models\Invoice::where('student_id', $student->id)->delete();
+                
+                // Delete books assigned to this student (if books table has student_reference)
+                if (Schema::hasTable('books') && Schema::hasColumn('books', 'student_reference')) {
+                    \App\Models\Book::where('student_reference', $reference)->delete();
+                }
+            }
+            
+            // Finally, delete all students with this reference
+            Student::where('reference', $reference)->delete();
+            
+            return redirect()->route('students.index')
+                ->with('status', "Successfully deleted {$count} student(s) with reference: {$reference}");
+                
+        } catch (\Exception $e) {
+            \Log::error('Student deletion failed: ' . $e->getMessage());
+            return redirect()->route('students.index')
+                ->with('error', 'Failed to delete student: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Helper: Get slot index from time and day
      */
     private function getSlotIndexFromTime($startTime, $dayString)

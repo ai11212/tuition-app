@@ -171,11 +171,11 @@
     <h2 class="font-semibold mb-3">Record a Payment</h2>
     @if(session('ok')) <div class="mb-3 text-sm text-emerald-700">{{ session('ok') }}</div> @endif
     @php $students = $students ?? collect(); @endphp
-    <form method="POST" action="{{ route('payments.store') }}" class="grid md:grid-cols-4 gap-3">
+    <form method="POST" action="{{ route('payments.store') }}" class="grid md:grid-cols-6 gap-3">
       @csrf
       <div class="md:col-span-2">
         <label class="text-sm text-gray-600">Reference*</label>
-        <input name="reference" value="{{ old('reference') }}" required class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
+        <input name="reference" value="{{ old('reference', $ref ?? '') }}" required class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2" placeholder="Student reference">
         @if($students->count())
           <div class="mt-2 text-xs text-gray-500">
             <span>Matching students:</span>
@@ -189,26 +189,34 @@
       </div>
       <div class="md:col-span-1">
         <label class="text-sm text-gray-600">Amount (£)*</label>
-  <input name="amount" type="number" step="0.01" min="0" value="{{ old('amount') }}" required class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
+        <input name="amount" type="number" step="0.01" min="0" value="{{ old('amount') }}" required class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
       </div>
       <div class="md:col-span-1">
         <label class="text-sm text-gray-600">Method</label>
-  <select name="method" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
+        <select name="method" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
           <option>Cash</option>
           <option>Card</option>
           <option>Bank</option>
           <option>Transfer</option>
         </select>
       </div>
-      <div class="md:col-span-1">
+      <div class="md:col-span-2">
         <label class="text-sm text-gray-600">Paid at</label>
-  <input type="date" name="paid_at" value="{{ old('paid_at') }}" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
+        <input type="date" name="paid_at" value="{{ old('paid_at', date('Y-m-d')) }}" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
       </div>
-      <div class="md:col-span-4">
+      <div class="md:col-span-3">
+        <label class="text-sm text-gray-600">Payment Period From</label>
+        <input type="date" name="period_from" value="{{ old('period_from', date('Y-m-d')) }}" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
+      </div>
+      <div class="md:col-span-3">
+        <label class="text-sm text-gray-600">Payment Period To</label>
+        <input type="date" name="period_to" value="{{ old('period_to', date('Y-m-d', strtotime('+1 week'))) }}" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
+      </div>
+      <div class="md:col-span-6">
         <label class="text-sm text-gray-600">Notes</label>
-  <textarea name="notes" rows="2" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">{{ old('notes') }}</textarea>
+        <textarea name="notes" rows="2" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2" placeholder="Add payment notes...">{{ old('notes') }}</textarea>
       </div>
-      <div class="md:col-span-4">
+      <div class="md:col-span-6">
         <button class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Add Payment</button>
       </div>
     </form>

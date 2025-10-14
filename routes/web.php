@@ -24,7 +24,7 @@ Route::middleware('auth')->group(function(){
     Route::get('/students/{reference}/edit', [StudentController::class,'edit'])->name('students.edit');
     Route::post('/students/{reference}/next-edit', [StudentController::class,'nextEdit'])->name('students.next.edit');
     Route::put('/students/{reference}',      [StudentController::class,'update'])->name('students.update');
-    Route::delete('/students/{student}',   [StudentController::class,'destroy'])->name('students.destroy');
+    Route::delete('/students/{reference}',   [StudentController::class,'destroy'])->name('students.destroy');
 
     // Debug: show current admission session (authenticated)
     Route::get('/debug/admission', function (\Illuminate\Http\Request $r) {
