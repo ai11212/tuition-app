@@ -55,7 +55,7 @@
   <a href="/accounts" class="p-3 rounded-lg border bg-white hover:bg-blue-50">Accounts Summary</a>
   <a href="/books/create" class="p-3 rounded-lg border bg-white hover:bg-blue-50">Add Books</a>
   <a href="/defaulters" class="p-3 rounded-lg border bg-white hover:bg-blue-50">Defaulter List</a>
-  <a href="/print-timetable" class="p-3 rounded-lg border bg-white hover:bg-blue-50">Print Time Table</a>
+  <a href="/students" class="p-3 rounded-lg border bg-white hover:bg-blue-50">Print Time Table</a>
   <a href="/attendance" class="p-3 rounded-lg border bg-white hover:bg-blue-50">Attendance</a>
   <a href="/attendance/view" class="p-3 rounded-lg border bg-white hover:bg-blue-50">View Attendance</a>
   <a href="/attendance/status" class="p-3 rounded-lg border bg-white hover:bg-blue-50">Attendance Data</a>
