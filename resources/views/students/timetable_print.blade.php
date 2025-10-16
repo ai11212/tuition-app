@@ -1,590 +1,328 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-6xl mx-auto p-6">
+<style>
+    /* Hide navigation header for print view */
+    header { display: none !important; }
+    aside { display: none !important; }
+    main { padding-top: 0 !important; padding: 0 !important; }
+    body { margin: 0; padding: 0; }
+    
+    /* Balanced spacing for screen view */
+    .compact-page {
+        max-width: 1300px;
+        padding: 3rem 6rem;
+        margin: 2rem auto;
+        background: white;
+    }
+    
+    .compact-header {
+        padding: 1.5rem 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .compact-section {
+        padding: 1.5rem 2rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .compact-day {
+        margin-bottom: 2rem;
+        padding-left: 0.5rem;
+    }
+    
+    .compact-day h3 {
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.5rem;
+        font-size: 1.125rem;
+        font-weight: 600;
+    }
+    
+    .compact-slot {
+        margin-bottom: 0.75rem;
+        line-height: 1.6;
+        display: flex;
+        align-items: baseline;
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .compact-page {
+            max-width: 100%;
+            padding: 1.5rem 2rem;
+            margin: 0.5rem;
+        }
+        
+        .compact-header {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+        
+        .compact-header h1 {
+            font-size: 1.5rem !important;
+        }
+        
+        .compact-header p {
+            font-size: 0.875rem !important;
+        }
+        
+        .compact-header .flex {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .compact-header .no-print {
+            width: 100%;
+            flex-direction: column;
+        }
+        
+        .compact-header .no-print button,
+        .compact-header .no-print a {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .compact-section {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+        
+        .compact-section .flex-wrap {
+            gap: 0.5rem !important;
+        }
+        
+        .compact-day {
+            margin-bottom: 1.5rem;
+            padding-left: 0.75rem;
+        }
+        
+        .compact-day h3 {
+            font-size: 1rem;
+            padding-left: 0.25rem;
+        }
+        
+        .compact-slot {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.25rem;
+            padding-left: 0.5rem;
+        }
+    }
+    
+    @media print {
+        .no-print { display: none !important; }
+        body { background: white; margin: 0; padding: 0; }
+        .shadow-lg { box-shadow: none !important; }
+        header { display: none !important; }
+        aside { display: none !important; }
+        main { padding: 0 !important; }
+        
+        /* Compact for print */
+        .compact-page {
+            max-width: 100%;
+            padding: 0.5rem;
+            margin: 0;
+        }
+        
+        .compact-header {
+            padding: 0.25rem 0;
+            margin-bottom: 0.5rem;
+        }
+        
+        .compact-section {
+            padding: 0.25rem 0;
+            margin-bottom: 0.5rem;
+        }
+        
+        .compact-day {
+            margin-bottom: 0.5rem;
+        }
+        
+        .compact-day h3 {
+            margin-bottom: 0.25rem;
+            padding-bottom: 0.25rem;
+            font-size: 0.9rem;
+        }
+        
+        .compact-slot {
+            margin-bottom: 0.15rem;
+            line-height: 1.2;
+        }
+        
+        /* Force single page */
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+    }
+</style>
+
+<div class="compact-page">
     
     @if(isset($hasSiblings) && $hasSiblings)
-        {{-- Siblings: Show separate timetable for each student --}}
+        {{-- Multiple Students: Show separate list for each --}}
         @foreach($studentTimetables as $index => $studentData)
-            <div class="bg-white rounded-lg shadow-lg" style="page-break-after: {{ $index < count($studentTimetables) - 1 ? 'always' : 'auto' }};">
-                {{-- Header Section --}}
-                <div class="border-b border-gray-200 p-6">
+            <div class="bg-white" style="page-break-after: {{ $index < count($studentTimetables) - 1 ? 'always' : 'auto' }};">
+                
+                {{-- Header --}}
+                <div class="compact-header border-b-2 border-gray-300">
                     <div class="flex justify-between items-start">
                         <div>
-                            <h1 class="text-3xl font-bold text-gray-900 mb-2">Student Timetable</h1>
-                            <p class="text-lg text-gray-600">Reference: <span class="font-semibold text-blue-600">{{ $reference }}</span></p>
+                            <h1 class="text-3xl font-bold text-gray-900 mb-1">Student Timetable</h1>
+                            <p class="text-base text-gray-600">Reference: <span class="font-semibold text-blue-600">{{ $reference }}</span></p>
                         </div>
-                        <div class="flex gap-3 no-print">
+                        <div class="no-print flex gap-2">
                             @if($index === 0)
-                                <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium">
-                                    🖨️ Print Timetable
+                                <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                    </svg>
+                                    Print Timetable
                                 </button>
-                                <a href="{{ route('students.create') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium">
-                                    ➕ New Admission
+                                <a href="{{ route('students.create') }}" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    New Admission
                                 </a>
                             @endif
                         </div>
                     </div>
                 </div>
 
-                {{-- Student Information --}}
-                <div class="p-6 border-b border-gray-200">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-3">� Student {{ $index + 1 }}</h2>
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 inline-block">
-                        <h3 class="font-semibold text-blue-900">{{ $studentData['student']->first_name }} {{ $studentData['student']->last_name }}</h3>
+                {{-- Student Info --}}
+                <div class="compact-section border-b border-gray-200">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 inline-block">
+                        <h3 class="font-semibold text-blue-900 text-lg">{{ $studentData['student']->first_name }} {{ $studentData['student']->last_name }}</h3>
                         @if($studentData['student']->guardian_name)
                             <p class="text-sm text-blue-600 mt-1">Guardian: {{ $studentData['student']->guardian_name }}</p>
                         @endif
                     </div>
                 </div>
 
-                {{-- Individual Timetable for this student --}}
-                <div class="p-6">
+                {{-- Clean List View --}}
+                <div class="compact-section">
                     @if($studentData['hasEntries'])
-                        <h2 class="text-xl font-semibold text-gray-800 mb-4">
-                            📅 {{ ucfirst($period ?? 'weekly') }} Schedule
+                        <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                            <span class="text-2xl">📅</span> {{ ucfirst($period ?? 'Weekly') }} Schedule
                         </h2>
                         
-                        @php $timetableGrid = $studentData['grid']; @endphp
-                        
-                        @if(isset($timetableGrid['isMonthly']) && $timetableGrid['isMonthly'])
-                    {{-- Monthly View: Show each week separately --}}
-                    @if(count($timetableGrid['filledDays']) > 0 && count($timetableGrid['filledTimeSlots']) > 0)
-                        @foreach($timetableGrid['grid'] as $weekName => $weekGrid)
-                            <div class="mb-8">
-                                <h3 class="text-lg font-medium text-gray-700 mb-3">{{ $weekName }}</h3>
-                                <div class="overflow-x-auto">
-                                    <table class="w-full border-collapse border border-gray-300 bg-white rounded-lg">
-                                        <thead>
-                                            <tr class="bg-gray-100">
-                                                <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Time Slot</th>
-                                                @foreach($timetableGrid['filledDays'] as $day)
-                                                    <th class="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700">{{ $day }}</th>
-                                                @endforeach
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach($timetableGrid['filledTimeSlots'] as $timeSlot)
-                                                @php
-                                                    // Check if this time slot has any actual classes in this week
-                                                    $hasClasses = false;
-                                                    foreach($timetableGrid['filledDays'] as $day) {
-                                                        if(isset($weekGrid[$day][$timeSlot])) {
-                                                            $hasClasses = true;
-                                                            break;
-                                                        }
-                                                    }
-                                                @endphp
-                                                
-                                                @if($hasClasses)
-                                                    <tr class="hover:bg-gray-50">
-                                                        <td class="border border-gray-300 px-4 py-4 font-medium text-gray-700 bg-gray-50">
-                                                            {{ $timeSlot }}
-                                                        </td>
-                                                        @foreach($timetableGrid['filledDays'] as $day)
-                                                            <td class="border border-gray-300 px-4 py-4 text-center">
-                                                                @if(isset($weekGrid[$day][$timeSlot]))
-                                                                    @php $entry = $weekGrid[$day][$timeSlot]; @endphp
-                                                                    <div class="bg-blue-100 border border-blue-300 rounded-lg p-3">
-                                                                        <div class="font-semibold text-blue-900">{{ $entry['subject'] }}</div>
-                                                                        @if($entry['teacher'])
-                                                                            <div class="text-sm text-blue-700 mt-1">👨‍🏫 {{ $entry['teacher'] }}</div>
-                                                                        @endif
-                                                                        @if($entry['room'])
-                                                                            <div class="text-sm text-blue-600 mt-1">🏠 {{ $entry['room'] }}</div>
-                                                                        @endif
-                                                                    </div>
-                                                                @else
-                                                                    <div class="text-gray-400 text-sm">—</div>
-                                                                @endif
-                                                            </td>
-                                                        @endforeach
-                                                    </tr>
-                                                @endif
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        @endforeach
-                    @endif
-                @else
-                    {{-- Weekly View: Show full 7-day grid with day-specific time slots --}}
-                    <div class="overflow-x-auto">
-                        <table class="w-full border-collapse border border-gray-300 bg-white rounded-lg">
-                            <thead>
-                                <tr class="bg-gray-100">
-                                    @foreach($timetableGrid['allDays'] as $day)
-                                        <th class="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700">{{ $day }}</th>
-                                    @endforeach
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @for($slotIndex = 0; $slotIndex < 4; $slotIndex++)
-                                    <tr class="hover:bg-gray-50">
-                                        @foreach($timetableGrid['allDays'] as $day)
-                                            @php
-                                                // Get the time slot label for this day and slot index
-                                                $timeSlotLabel = $timetableGrid['daySpecificSlots'][$day][$slotIndex] ?? '—';
-                                            @endphp
-                                            <td class="border border-gray-300 px-4 py-4 text-center">
-                                                <div class="font-bold text-sm text-gray-600 mb-2">{{ $timeSlotLabel }}</div>
-                                                @if(isset($timetableGrid['grid'][$day][$timeSlotLabel]))
-                                                    @php $entry = $timetableGrid['grid'][$day][$timeSlotLabel]; @endphp
-                                                    <div class="bg-blue-100 border border-blue-300 rounded-lg p-3">
-                                                        <div class="font-semibold text-blue-900">{{ $entry['subject'] }}</div>
-                                                        @if($entry['teacher'])
-                                                            <div class="text-sm text-blue-700 mt-1">👨‍🏫 {{ $entry['teacher'] }}</div>
-                                                        @endif
-                                                        @if($entry['room'])
-                                                            <div class="text-sm text-blue-600 mt-1">🏠 {{ $entry['room'] }}</div>
-                                                        @endif
-                                                    </div>
-                                                @else
-                                                    <div class="text-gray-400 text-sm">—</div>
-                                                @endif
-                                            </td>
+                        @php 
+                            $timetableGrid = $studentData['grid'];
+                            $dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                        @endphp
+
+                        {{-- List by Day --}}
+                        @foreach($dayOrder as $day)
+                            @if(isset($timetableGrid['grid'][$day]) && count($timetableGrid['grid'][$day]) > 0)
+                                <div class="compact-day">
+                                    <h3 class="font-bold text-gray-900 border-b-2 border-gray-400 text-base">{{ $day }}</h3>
+                                    <div class="ml-4 mt-2">
+                                        @foreach($timetableGrid['grid'][$day] as $timeSlot => $entry)
+                                            <div class="compact-slot">
+                                                <span class="text-gray-600 font-medium min-w-[130px] inline-block">{{ $timeSlot }}</span>
+                                                <span class="text-gray-900 font-semibold">{{ $entry['subject'] }}</span>
+                                            </div>
                                         @endforeach
-                                    </tr>
-                                @endfor
-                            </tbody>
-                        </table>
-                    </div>
-                        @endif
+                                    </div>
+                                </div>
+                            @endif
+                        @endforeach
+
                     @else
-                        {{-- No Timetable for this student --}}
-                        <div class="text-center py-8">
-                            <p class="text-gray-500">No timetable entries for this student.</p>
+                        <div class="text-center py-8 text-gray-500">
+                            No timetable entries for this student.
                         </div>
                     @endif
                 </div>
 
                 {{-- Footer --}}
-                <div class="border-t border-gray-200 p-6 bg-gray-50">
-                    <div class="flex justify-between items-center text-sm text-gray-600">
-                        <div>Generated on {{ now()->format('F j, Y \a\t g:i A') }}</div>
-                        <div>Tuition Management System</div>
-                    </div>
+                <div class="border-t border-gray-200 py-1 text-center text-xs text-gray-500">
+                    Generated on {{ now()->format('F j, Y \a\t g:i A') }}
                 </div>
             </div>
         @endforeach
         
     @else
-        {{-- Single Student or Old Data: Show combined timetable --}}
-        <div class="bg-white rounded-lg shadow-lg">
-            {{-- Header Section --}}
-            <div class="border-b border-gray-200 p-6">
+        {{-- Single Student or Combined View --}}
+        <div class="bg-white">
+            
+            {{-- Header --}}
+            <div class="compact-header border-b-2 border-gray-300">
                 <div class="flex justify-between items-start">
                     <div>
-                        <h1 class="text-3xl font-bold text-gray-900 mb-2">Student Timetable</h1>
-                        <p class="text-lg text-gray-600">Reference: <span class="font-semibold text-blue-600">{{ $reference }}</span></p>
+                        <h1 class="text-3xl font-bold text-gray-900 mb-1">Student Timetable</h1>
+                        <p class="text-base text-gray-600">Reference: <span class="font-semibold text-blue-600">{{ $reference }}</span></p>
                     </div>
-                    <div class="flex gap-3 no-print">
-                        <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium">
-                            🖨️ Print Timetable
+                    <div class="no-print flex gap-2">
+                        <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                            </svg>
+                            Print Timetable
                         </button>
-                        <a href="{{ route('students.create') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium">
-                            ➕ New Admission
+                        <a href="{{ route('students.create') }}" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            New Admission
                         </a>
                     </div>
                 </div>
             </div>
 
-            {{-- Student Information --}}
-            <div class="p-6 border-b border-gray-200">
-                <h2 class="text-xl font-semibold text-gray-800 mb-3">👥 Students Enrolled</h2>
-                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    @foreach($students as $index => $student)
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <h3 class="font-semibold text-blue-900">Student {{ $index + 1 }}</h3>
-                            <p class="text-blue-800">{{ $student->first_name }} {{ $student->last_name }}</p>
-                            @if($student->guardian_name)
-                                <p class="text-sm text-blue-600 mt-1">Guardian: {{ $student->guardian_name }}</p>
-                            @endif
+            {{-- Student Info --}}
+            <div class="compact-section border-b border-gray-200">
+                <div class="flex flex-wrap gap-3">
+                    @foreach($students as $student)
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+                            <span class="font-semibold text-blue-900">{{ $student->first_name }} {{ $student->last_name }}</span>
                         </div>
                     @endforeach
                 </div>
             </div>
 
-            {{-- Combined Timetable Section --}}
-            <div class="p-6">
+            {{-- Clean List View --}}
+            <div class="compact-section">
                 @if($hasEntries)
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4">
-                        📅 {{ ucfirst($period ?? 'weekly') }} Schedule
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <span class="text-2xl">📅</span> {{ ucfirst($period ?? 'Weekly') }} Schedule
                     </h2>
                     
-                    @if(isset($timetableGrid['isMonthly']) && $timetableGrid['isMonthly'])
-                        {{-- Monthly View: Show each week separately --}}
-                        @if(count($timetableGrid['filledDays']) > 0 && count($timetableGrid['filledTimeSlots']) > 0)
-                            @foreach($timetableGrid['grid'] as $weekName => $weekGrid)
-                                <div class="mb-8">
-                                    <h3 class="text-lg font-medium text-gray-700 mb-3">{{ $weekName }}</h3>
-                                    <div class="overflow-x-auto">
-                                        <table class="w-full border-collapse border border-gray-300 bg-white rounded-lg">
-                                            <thead>
-                                                <tr class="bg-gray-100">
-                                                    <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Time Slot</th>
-                                                    @foreach($timetableGrid['filledDays'] as $day)
-                                                        <th class="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700">{{ $day }}</th>
-                                                    @endforeach
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @foreach($timetableGrid['filledTimeSlots'] as $timeSlot)
-                                                    @php
-                                                        // Check if this time slot has any actual classes in this week
-                                                        $hasClasses = false;
-                                                        foreach($timetableGrid['filledDays'] as $day) {
-                                                            if(isset($weekGrid[$day][$timeSlot])) {
-                                                                $hasClasses = true;
-                                                                break;
-                                                            }
-                                                        }
-                                                    @endphp
-                                                    
-                                                    @if($hasClasses)
-                                                        <tr class="hover:bg-gray-50">
-                                                            <td class="border border-gray-300 px-4 py-4 font-medium text-gray-700 bg-gray-50">
-                                                                {{ $timeSlot }}
-                                                            </td>
-                                                            @foreach($timetableGrid['filledDays'] as $day)
-                                                                <td class="border border-gray-300 px-4 py-4 text-center">
-                                                                    @if(isset($weekGrid[$day][$timeSlot]))
-                                                                        @php $entry = $weekGrid[$day][$timeSlot]; @endphp
-                                                                        <div class="bg-blue-100 border border-blue-300 rounded-lg p-3">
-                                                                            <div class="font-semibold text-blue-900">{{ $entry['subject'] }}</div>
-                                                                            @if($entry['teacher'])
-                                                                                <div class="text-sm text-blue-700 mt-1">👨‍🏫 {{ $entry['teacher'] }}</div>
-                                                                            @endif
-                                                                            @if($entry['room'])
-                                                                                <div class="text-sm text-blue-600 mt-1">🏠 {{ $entry['room'] }}</div>
-                                                                            @endif
-                                                                        </div>
-                                                                    @else
-                                                                        <div class="text-gray-400 text-sm">—</div>
-                                                                    @endif
-                                                                </td>
-                                                            @endforeach
-                                                        </tr>
-                                                    @endif
-                                                @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div>
+                    @php 
+                        $dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                    @endphp
+
+                    {{-- List by Day --}}
+                    @foreach($dayOrder as $day)
+                        @if(isset($timetableGrid['grid'][$day]) && count($timetableGrid['grid'][$day]) > 0)
+                            <div class="compact-day">
+                                <h3 class="font-bold text-gray-800 border-b border-gray-400">{{ $day }}</h3>
+                                <div class="ml-3">
+                                    @foreach($timetableGrid['grid'][$day] as $timeSlot => $entry)
+                                        <div class="compact-slot flex gap-2">
+                                            <span class="text-gray-600 text-sm min-w-[100px]">{{ $timeSlot }}</span>
+                                            <span class="text-gray-900 font-medium text-sm">{{ $entry['subject'] }}</span>
+                                        </div>
+                                    @endforeach
                                 </div>
-                            @endforeach
-                        @endif
-                    @else
-                        {{-- Weekly View: Show full 7-day grid with day-specific time slots --}}
-                        <div class="overflow-x-auto">
-                            <table class="w-full border-collapse border border-gray-300 bg-white rounded-lg">
-                                <thead>
-                                    <tr class="bg-gray-100">
-                                        @foreach($timetableGrid['allDays'] as $day)
-                                            <th class="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700">{{ $day }}</th>
-                                        @endforeach
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @for($slotIndex = 0; $slotIndex < 4; $slotIndex++)
-                                        <tr class="hover:bg-gray-50">
-                                            @foreach($timetableGrid['allDays'] as $day)
-                                                @php
-                                                    // Get the time slot label for this day and slot index
-                                                    $timeSlotLabel = $timetableGrid['daySpecificSlots'][$day][$slotIndex] ?? '—';
-                                                @endphp
-                                                <td class="border border-gray-300 px-4 py-4 text-center">
-                                                    <div class="font-bold text-sm text-gray-600 mb-2">{{ $timeSlotLabel }}</div>
-                                                    @if(isset($timetableGrid['grid'][$day][$timeSlotLabel]))
-                                                        @php $entry = $timetableGrid['grid'][$day][$timeSlotLabel]; @endphp
-                                                        <div class="bg-blue-100 border border-blue-300 rounded-lg p-3">
-                                                            <div class="font-semibold text-blue-900">{{ $entry['subject'] }}</div>
-                                                            @if($entry['teacher'])
-                                                                <div class="text-sm text-blue-700 mt-1">👨‍🏫 {{ $entry['teacher'] }}</div>
-                                                            @endif
-                                                            @if($entry['room'])
-                                                                <div class="text-sm text-blue-600 mt-1">🏠 {{ $entry['room'] }}</div>
-                                                            @endif
-                                                        </div>
-                                                    @else
-                                                        <div class="text-gray-400 text-sm">—</div>
-                                                    @endif
-                                                </td>
-                                            @endforeach
-                                        </tr>
-                                    @endfor
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
-                @else
-                    {{-- No Timetable Entries --}}
-                    <div class="text-center py-12">
-                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-8">
-                            <div class="text-6xl mb-4">📅</div>
-                            <h2 class="text-2xl font-semibold text-yellow-800 mb-2">No Timetable Created</h2>
-                            <p class="text-yellow-700 mb-6">This student admission was saved without any timetable entries.</p>
-                            <div class="flex gap-3 justify-center">
-                                <a href="{{ route('students.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium">
-                                    Create New Admission
-                                </a>
-                                <a href="{{ route('tt.form') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium">
-                                    Print Existing Timetable
-                                </a>
                             </div>
-                        </div>
+                        @endif
+                    @endforeach
+
+                @else
+                    <div class="text-center py-4 text-gray-500 text-sm">
+                        No timetable entries found.
                     </div>
                 @endif
             </div>
 
             {{-- Footer --}}
-            <div class="border-t border-gray-200 p-6 bg-gray-50">
-                <div class="flex justify-between items-center text-sm text-gray-600">
-                    <div>Generated on {{ now()->format('F j, Y \a\t g:i A') }}</div>
-                    <div>Tuition Management System</div>
-                </div>
+            <div class="border-t border-gray-200 py-1 text-center text-xs text-gray-500">
+                Generated on {{ now()->format('F j, Y \a\t g:i A') }}
             </div>
         </div>
     @endif
+    
 </div>
-
-{{-- Print Styles --}}
-<style>
-@media print {
-    /* Force landscape orientation for wide timetable */
-    @page {
-        size: A4 landscape;
-        margin: 0.75cm;
-    }
-    
-    /* CRITICAL: Hide header, sidebar, and navigation */
-    header,
-    aside,
-    nav,
-    .no-print {
-        display: none !important;
-    }
-    
-    body {
-        font-size: 11pt;
-        line-height: 1.3;
-        margin: 0;
-        padding: 0;
-    }
-    
-    /* Main content - remove all offsets from header/sidebar */
-    main {
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-    
-    main > div {
-        padding: 0 !important;
-        margin: 0 !important;
-        max-width: none !important;
-    }
-    
-    /* Main container */
-    .max-w-6xl {
-        max-width: none !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    
-    /* Each student timetable on separate page (handled inline with style attribute) */
-    .bg-white {
-        page-break-inside: avoid;
-    }
-    
-    /* Remove decorative styling */
-    .shadow-lg, .rounded-lg, .rounded {
-        box-shadow: none !important;
-        border-radius: 0 !important;
-    }
-    
-    /* Header section */
-    .border-b.border-gray-200.p-6:first-child {
-        padding: 5px 0 !important;
-        border-bottom: 2px solid #000 !important;
-        margin-bottom: 8px !important;
-    }
-    
-    h1 {
-        font-size: 16pt !important;
-        margin: 0 0 3px 0 !important;
-        padding: 0 !important;
-        font-weight: bold !important;
-    }
-    
-    p {
-        font-size: 11pt !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    
-    /* Student info section */
-    .p-6.border-b.border-gray-200 {
-        padding: 5px 0 !important;
-        border-bottom: 1px solid #000 !important;
-        margin-bottom: 8px !important;
-    }
-    
-    h2 {
-        font-size: 12pt !important;
-        margin: 0 0 4px 0 !important;
-        padding: 0 !important;
-        font-weight: bold !important;
-    }
-    
-    .grid.md\:grid-cols-2.lg\:grid-cols-3 {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        gap: 5px !important;
-        margin: 3px 0 !important;
-    }
-    
-    .bg-blue-50 {
-        background-color: #f0f0f0 !important;
-        padding: 4px 8px !important;
-        border: 1px solid #000 !important;
-        margin: 0 !important;
-    }
-    
-    h3 {
-        font-size: 10pt !important;
-        margin: 0 0 2px 0 !important;
-        font-weight: bold !important;
-    }
-    
-    /* Timetable section */
-    .p-6:last-of-type {
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-    
-    h2.text-xl {
-        font-size: 13pt !important;
-        margin-bottom: 6px !important;
-        padding: 0 !important;
-        font-weight: bold !important;
-    }
-    
-    /* Table container */
-    .overflow-x-auto {
-        overflow: visible !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    
-    /* Table - more relaxed spacing */
-    table {
-        width: 100% !important;
-        border-collapse: collapse !important;
-        page-break-inside: avoid !important;
-        font-size: 10pt;
-        margin: 0 !important;
-    }
-    
-    thead {
-        display: table-header-group !important;
-    }
-    
-    tbody {
-        display: table-row-group !important;
-    }
-    
-    tr {
-        page-break-inside: avoid !important;
-        display: table-row !important;
-    }
-    
-    /* Table headers - more padding for readability */
-    th {
-        border: 1px solid #000 !important;
-        padding: 8px 10px !important;
-        text-align: center !important;
-        vertical-align: middle !important;
-        background-color: #d5d5d5 !important;
-        font-weight: bold !important;
-        font-size: 10pt !important;
-        display: table-cell !important;
-    }
-    
-    /* Table data cells - more relaxed */
-    td {
-        border: 1px solid #000 !important;
-        padding: 8px 6px !important;
-        text-align: center !important;
-        vertical-align: top !important;
-        display: table-cell !important;
-    }
-    
-    /* Time slot labels - more visible */
-    .font-bold.text-sm {
-        font-size: 9pt !important;
-        margin: 0 0 3px 0 !important;
-        padding: 0 !important;
-        font-weight: bold !important;
-        display: block !important;
-    }
-    
-    /* Subject cells - better spacing */
-    .bg-blue-100 {
-        background-color: #f8f8f8 !important;
-        padding: 4px !important;
-        border: none !important;
-        border-radius: 0 !important;
-        margin: 0 !important;
-        display: block !important;
-    }
-    
-    .font-semibold.text-blue-900 {
-        font-size: 10pt !important;
-        color: #000 !important;
-        font-weight: bold !important;
-        margin: 0 0 2px 0 !important;
-        padding: 0 !important;
-        display: block !important;
-    }
-    
-    .text-sm.text-blue-700,
-    .text-sm.text-blue-600 {
-        font-size: 8pt !important;
-        color: #444 !important;
-        margin: 2px 0 0 0 !important;
-        padding: 0 !important;
-        display: block !important;
-    }
-    
-    /* Empty cells */
-    .text-gray-400 {
-        color: #999 !important;
-        font-size: 9pt !important;
-    }
-    
-    /* Footer */
-    .border-t.border-gray-200.p-6.bg-gray-50 {
-        padding: 5px !important;
-        border-top: 1px solid #000 !important;
-        background-color: transparent !important;
-        font-size: 8pt !important;
-        margin-top: 8px !important;
-    }
-    
-    .flex.justify-between {
-        display: flex !important;
-        justify-content: space-between !important;
-    }
-    
-    /* Clean up utility classes */
-    .mb-2 { margin-bottom: 2px !important; }
-    .mb-3 { margin-bottom: 3px !important; }
-    .mb-4 { margin-bottom: 4px !important; }
-    .mt-1 { margin-top: 2px !important; }
-    
-    .px-4, .py-3, .py-4 {
-        padding: 0 !important;
-    }
-}
-</style>
 @endsection

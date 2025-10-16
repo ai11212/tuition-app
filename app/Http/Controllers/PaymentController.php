@@ -388,4 +388,86 @@ class PaymentController extends Controller
             'from','to','inTotal','outTotal','net','breakdown','paymentBreakdown','expensesByCategory','daily','weekly','monthly','invoices','outstanding'
         ));
     }
+
+    /**
+     * Update an existing payment
+     */
+    public function update(Request $request, $id)
+    {
+        $data = $request->validate([
+            'amount'      => 'required|numeric|min:0.01',
+            'method'      => 'required|string|in:Cash,Card,Bank,Transfer',
+            'purpose'     => 'nullable|string|in:tuition,books,deposit,other',
+            'paid_at'     => 'required|date',
+            'period_from' => 'nullable|date',
+            'period_to'   => 'nullable|date',
+            'notes'       => 'nullable|string|max:500',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $payment = PaymentTransaction::with('invoice')->findOrFail($id);
+            
+            // Update payment transaction
+            $paymentData = [
+                'amount'  => $data['amount'],
+                'method'  => $data['method'],
+                'paid_on' => date('Y-m-d', strtotime($data['paid_at'])),
+                'notes'   => $data['notes'] ?? null,
+            ];
+            
+            // Add optional columns if they exist (backward compatibility)
+            if (Schema::hasColumn('payment_transactions','paid_at')) {
+                $paymentData['paid_at'] = $data['paid_at'];
+            }
+            if (Schema::hasColumn('payment_transactions','purpose')) {
+                $paymentData['purpose'] = $data['purpose'] ?? 'tuition';
+            }
+            
+            $payment->update($paymentData);
+            
+            // Update related invoice
+            $payment->invoice->update([
+                'amount'      => $data['amount'],
+                'period_from' => $data['period_from'] ?? $payment->invoice->period_from,
+                'period_to'   => $data['period_to'] ?? $payment->invoice->period_to,
+            ]);
+            
+            DB::commit();
+            return redirect()->route('payments', request()->only('ref','from','to'))
+                             ->with('success', 'Payment updated successfully!');
+                             
+        } catch (\Exception $e) {
+            DB::rollback();
+            return redirect()->route('payments', request()->only('ref','from','to'))
+                             ->with('error', 'Failed to update payment: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete a payment (cascade deletes invoice)
+     */
+    public function destroy($id)
+    {
+        DB::beginTransaction();
+        try {
+            $payment = PaymentTransaction::with('invoice')->findOrFail($id);
+            $invoiceRef = $payment->invoice->reference ?? 'N/A';
+            
+            // Delete invoice first (if exists), then payment
+            if ($payment->invoice) {
+                $payment->invoice->delete();
+            }
+            $payment->delete();
+            
+            DB::commit();
+            return redirect()->route('payments', request()->only('ref','from','to'))
+                             ->with('success', "Payment and Invoice {$invoiceRef} deleted successfully!");
+                             
+        } catch (\Exception $e) {
+            DB::rollback();
+            return redirect()->route('payments', request()->only('ref','from','to'))
+                             ->with('error', 'Failed to delete payment: ' . $e->getMessage());
+        }
+    }
 }

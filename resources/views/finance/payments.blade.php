@@ -2,6 +2,18 @@
 
 @section('content')
 <div class="max-w-6xl mx-auto p-4">
+  {{-- Success/Error Messages --}}
+  @if(session('success'))
+    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+      {{ session('success') }}
+    </div>
+  @endif
+  @if(session('error'))
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+      {{ session('error') }}
+    </div>
+  @endif
+
   <div class="flex items-center justify-between mb-4">
     <h1 class="text-2xl font-semibold">Payments</h1>
     <div class="flex gap-2">
@@ -48,8 +60,8 @@
         <div>
           <span class="text-blue-700 font-medium">Deposit:</span><br>
           <span class="text-lg font-semibold text-green-700">£{{ number_format($studentDetails['deposit'], 2) }}</span>
-          <span class="ms-2 badge {{ $studentDetails['deposit_paid'] ? 'bg-success' : 'bg-secondary' }}">
-            {{ $studentDetails['deposit_paid'] ? 'Yes' : 'No' }}
+          <span class="ms-2 badge {{ $studentDetails['deposit_paid'] == 1 || $studentDetails['deposit_paid'] === '1' || $studentDetails['deposit_paid'] === true ? 'bg-success' : 'bg-secondary' }}">
+            {{ $studentDetails['deposit_paid'] == 1 || $studentDetails['deposit_paid'] === '1' || $studentDetails['deposit_paid'] === true ? 'Yes' : 'No' }}
           </span>
         </div>
         <div>
@@ -248,6 +260,7 @@
           <th class="px-3 py-2 text-right">Amount (£)</th>
           <th class="px-3 py-2 text-left">Invoice</th>
           <th class="px-3 py-2 text-left">Notes</th>
+          <th class="px-3 py-2 text-left">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -269,11 +282,40 @@
             <td class="px-3 py-2">{{ $p->method }}</td>
             <td class="px-3 py-2 text-right">£{{ number_format($p->amount,2) }}</td>
             <td class="px-3 py-2">{{ $p->invoice_ref ?? '' }}</td>
-            <td class="px-3 py-2">@if($p->invoice_id)<a href="{{ route('invoice.print',$p->invoice_id) }}" class="px-2 py-1 rounded bg-gray-100 text-sm">Print</a>@endif</td>
             <td class="px-3 py-2">{{ $p->notes }}</td>
+            <td class="px-3 py-2">
+              <div class="flex gap-2">
+                @if($p->invoice_id)
+                  <a href="{{ route('invoice.print',$p->invoice_id) }}" 
+                     class="px-2 py-1 rounded bg-gray-100 text-sm hover:bg-gray-200">Print</a>
+                @endif
+                <button onclick="openEditModal({{ json_encode([
+                  'id' => $p->id,
+                  'student_ref' => $p->student_ref,
+                  'student_name' => $p->student_name,
+                  'amount' => $p->amount,
+                  'method' => $p->method,
+                  'purpose' => $p->purpose ?? 'tuition',
+                  'paid_at' => $p->paid_at ? date('Y-m-d', strtotime($p->paid_at)) : ($p->paid_on ? date('Y-m-d', strtotime($p->paid_on)) : date('Y-m-d')),
+                  'period_from' => $p->invoice_id ? \App\Models\Invoice::find($p->invoice_id)->period_from : '',
+                  'period_to' => $p->invoice_id ? \App\Models\Invoice::find($p->invoice_id)->period_to : '',
+                  'notes' => $p->notes,
+                  'invoice_ref' => $p->invoice_ref ?? ''
+                ]) }})" 
+                        class="px-2 py-1 rounded bg-blue-100 text-blue-700 text-sm hover:bg-blue-200">✏️ Edit</button>
+                <form method="POST" action="{{ route('payments.destroy', $p->id) }}" 
+                      id="delete-form-{{ $p->id }}" class="inline">
+                  @csrf
+                  @method('DELETE')
+                  <button type="button" 
+                          onclick="confirmDelete({{ $p->id }}, '{{ $p->invoice_ref ?? 'N/A' }}')"
+                          class="px-2 py-1 rounded bg-red-100 text-red-700 text-sm hover:bg-red-200">🗑️ Delete</button>
+                </form>
+              </div>
+            </td>
           </tr>
         @empty
-          <tr><td class="px-3 py-6 text-center text-gray-500" colspan="7">No payments found.</td></tr>
+          <tr><td class="px-3 py-6 text-center text-gray-500" colspan="8">No payments found.</td></tr>
         @endforelse
       </tbody>
     </table>
@@ -285,4 +327,155 @@
     </div>
   @endif
 </div>
+
+{{-- Edit Payment Modal --}}
+<div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
+    <div class="p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold text-gray-800">Edit Payment</h2>
+        <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+      </div>
+
+      <form method="POST" action="" id="editForm">
+        @csrf
+        @method('PUT')
+
+        {{-- Student Info (Read-only) --}}
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <div class="grid md:grid-cols-2 gap-3 text-sm">
+            <div>
+              <span class="text-gray-600">Reference:</span>
+              <span class="font-semibold ml-2" id="modal_student_ref"></span>
+            </div>
+            <div>
+              <span class="text-gray-600">Student:</span>
+              <span class="font-semibold ml-2" id="modal_student_name"></span>
+            </div>
+            <div>
+              <span class="text-gray-600">Invoice:</span>
+              <span class="font-semibold ml-2" id="modal_invoice_ref"></span>
+            </div>
+          </div>
+        </div>
+
+        {{-- Editable Fields --}}
+        <div class="grid md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Amount (£) <span class="text-red-500">*</span></label>
+            <input type="number" name="amount" id="edit_amount" step="0.01" min="0.01" required
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Method <span class="text-red-500">*</span></label>
+            <select name="method" id="edit_method" required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="Cash">Cash</option>
+              <option value="Card">Card</option>
+              <option value="Bank">Bank Transfer</option>
+              <option value="Transfer">Transfer</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Purpose</label>
+            <select name="purpose" id="edit_purpose"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="tuition">Tuition Fee</option>
+              <option value="books">Book Payment</option>
+              <option value="deposit">Deposit</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Payment Date <span class="text-red-500">*</span></label>
+            <input type="date" name="paid_at" id="edit_paid_at" required
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Period From</label>
+            <input type="date" name="period_from" id="edit_period_from"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Period To</label>
+            <input type="date" name="period_to" id="edit_period_to"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+          <textarea name="notes" id="edit_notes" rows="3" maxlength="500"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+
+        {{-- Action Buttons --}}
+        <div class="flex justify-end gap-3">
+          <button type="button" onclick="closeModal()" 
+                  class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+            Cancel
+          </button>
+          <button type="submit" onclick="return confirm('Are you sure you want to update this payment?')"
+                  class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+            Update Payment
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function openEditModal(payment) {
+  // Set read-only info
+  document.getElementById('modal_student_ref').textContent = payment.student_ref || '';
+  document.getElementById('modal_student_name').textContent = payment.student_name || '';
+  document.getElementById('modal_invoice_ref').textContent = payment.invoice_ref || '';
+
+  // Set editable fields
+  document.getElementById('edit_amount').value = payment.amount || '';
+  document.getElementById('edit_method').value = payment.method || 'Cash';
+  document.getElementById('edit_purpose').value = payment.purpose || 'tuition';
+  document.getElementById('edit_paid_at').value = payment.paid_at || '';
+  document.getElementById('edit_period_from').value = payment.period_from || '';
+  document.getElementById('edit_period_to').value = payment.period_to || '';
+  document.getElementById('edit_notes').value = payment.notes || '';
+
+  // Set form action URL
+  document.getElementById('editForm').action = '/payments/' + payment.id;
+
+  // Show modal
+  document.getElementById('editModal').classList.remove('hidden');
+}
+
+function closeModal() {
+  document.getElementById('editModal').classList.add('hidden');
+}
+
+function confirmDelete(paymentId, invoiceRef) {
+  if (confirm(`⚠️ Are you sure you want to delete this payment?\n\nInvoice: ${invoiceRef}\n\nThis will also delete the invoice and cannot be undone!`)) {
+    document.getElementById('delete-form-' + paymentId).submit();
+  }
+}
+
+// Close modal when clicking outside
+document.getElementById('editModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeModal();
+  }
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeModal();
+  }
+});
+</script>
+
 @endsection

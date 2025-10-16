@@ -22,15 +22,6 @@
                     <form method="POST" action="{{ route('books.store') }}" id="add-book-form">
                         @csrf
                         <div class="mb-3">
-                            <label class="form-label">Book Reference *</label>
-                            <input type="text" name="reference" class="form-control @error('reference') is-invalid @enderror" 
-                                   placeholder="e.g., MATH-101" value="{{ old('reference') }}" required>
-                            @error('reference')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="mb-3">
                             <label class="form-label">Subject *</label>
                             <input type="text" name="subject" class="form-control @error('subject') is-invalid @enderror" 
                                    placeholder="e.g., Mathematics" value="{{ old('subject') }}" required>
@@ -211,10 +202,6 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Book Reference *</label>
-                        <input type="text" name="reference" id="edit-reference" class="form-control" required>
-                    </div>
                     <div class="mb-3">
                         <label class="form-label">Subject *</label>
                         <input type="text" name="subject" id="edit-subject" class="form-control" required>

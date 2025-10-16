@@ -57,7 +57,6 @@
             <thead class="bg-gray-50">
                 <tr>
                     <th class="px-4 py-3 text-left">Reference</th>
-                    <th class="px-4 py-3 text-left">Student Name</th>
                     <th class="px-4 py-3 text-right">Expected</th>
                     <th class="px-4 py-3 text-right">Paid</th>
                     <th class="px-4 py-3 text-right">Balance</th>
@@ -70,12 +69,6 @@
                 @forelse($students as $student)
                     <tr class="border-t hover:bg-gray-50">
                         <td class="px-4 py-3 font-mono text-xs">{{ $student->reference }}</td>
-                        <td class="px-4 py-3">
-                            <div class="font-medium">{{ $student->name }}</div>
-                            @if($student->guardian_phone)
-                                <div class="text-xs text-gray-500">{{ $student->guardian_phone }}</div>
-                            @endif
-                        </td>
                         <td class="px-4 py-3 text-right">
                             <div class="font-medium">£{{ number_format($student->expected_total, 2) }}</div>
                             <div class="text-xs text-gray-500">
@@ -116,7 +109,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+                        <td colspan="7" class="px-4 py-8 text-center text-gray-500">
                             No students found
                         </td>
                     </tr>

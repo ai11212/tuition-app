@@ -162,10 +162,6 @@
         <div class="section">
             <div class="section-title">Student Information</div>
             <div class="info-row">
-                <div class="info-label">Name:</div>
-                <div class="info-value">{{ $invoice->student->first_name }} {{ $invoice->student->last_name }}</div>
-            </div>
-            <div class="info-row">
                 <div class="info-label">Reference:</div>
                 <div class="info-value">{{ $invoice->student->reference }}</div>
             </div>
@@ -187,31 +183,6 @@
                 <div class="info-value">{{ \Carbon\Carbon::parse($invoice->period_to)->format('d M Y') }}</div>
             </div>
         </div>
-
-        <!-- Class Schedule -->
-        @if($timetables->count() > 0)
-        <div class="section">
-            <div class="section-title">Class Schedule</div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Day</th>
-                        <th>Time</th>
-                        <th>Subject</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($timetables as $t)
-                    <tr>
-                        <td>{{ $t->day_of_week }}</td>
-                        <td>{{ \Carbon\Carbon::parse($t->start_time)->format('g:ia') }} - {{ \Carbon\Carbon::parse($t->end_time)->format('g:ia') }}</td>
-                        <td>{{ $t->subject }}</td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-        @endif
 
         <!-- Payment Transactions -->
         <div class="section">

@@ -57,6 +57,7 @@ class StudentController extends Controller
             'enroll_date'       => 'nullable|date',
             'start_date'        => 'nullable|date',
             'deposit'           => 'nullable|numeric',
+            'deposit_paid'      => 'nullable|in:0,1',
             'payment'           => 'nullable|numeric',
             'period'            => 'nullable|string|max:32',
 
@@ -134,6 +135,7 @@ class StudentController extends Controller
             'enroll_date' => $admission['enroll_date'] ?? null,
             'start_date'  => $admission['start_date'] ?? null,
             'deposit'     => $admission['deposit'] ?? null,
+            'deposit_paid' => $admission['deposit_paid'] ?? 0,
             'payment'     => $admission['payment'] ?? null,
             'period'      => $admission['period'] ?? null,
         ] + $guardian;
@@ -394,6 +396,7 @@ class StudentController extends Controller
             'students.*.enroll_date' => 'nullable|date',
             'students.*.start_date' => 'nullable|date',
             'students.*.deposit' => 'nullable|numeric|min:0',
+            'students.*.deposit_paid' => 'nullable|in:0,1',
             'students.*.fee_amount' => 'nullable|numeric|min:0',
         ]);
 
@@ -461,6 +464,7 @@ class StudentController extends Controller
                         'enroll_date' => $studentData['enroll_date'] ?? null,
                         'start_date' => $studentData['start_date'] ?? null,
                         'deposit' => $studentData['deposit'] ?? 0,
+                        'deposit_paid' => $studentData['deposit_paid'] ?? 0,
                         'fee_amount' => $studentData['fee_amount'] ?? 0,
                         'period' => $period,
                     ]);

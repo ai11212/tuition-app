@@ -41,7 +41,6 @@ class BookController extends Controller {
         
         // Base validation rules
         $rules = [
-            'reference'=>'required',
             'subject'=>'required',
             'title'=>'required',
             'price'=>'required|numeric'
@@ -53,6 +52,9 @@ class BookController extends Controller {
         }
         
         $data = $r->validate($rules);
+        
+        // Auto-generate reference
+        $data['reference'] = 'BK-' . strtoupper(\Illuminate\Support\Str::random(6));
         
         // Remove student_reference from data if column doesn't exist
         if (!$hasStudentReferenceColumn && isset($data['student_reference'])) {
@@ -67,9 +69,8 @@ class BookController extends Controller {
         // Check if student_reference column exists
         $hasStudentReferenceColumn = Schema::hasColumn('books', 'student_reference');
         
-        // Base validation rules
+        // Base validation rules (reference is auto-generated, not editable)
         $rules = [
-            'reference'=>'required',
             'subject'=>'required',
             'title'=>'required',
             'price'=>'required|numeric'
@@ -81,6 +82,9 @@ class BookController extends Controller {
         }
         
         $data = $r->validate($rules);
+        
+        // Keep existing reference (don't change it)
+        // Reference is auto-generated and should not be editable
         
         // Remove student_reference from data if column doesn't exist
         if (!$hasStudentReferenceColumn && isset($data['student_reference'])) {

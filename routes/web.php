@@ -77,6 +77,8 @@ Route::get('/debug/admission-public', function (\Illuminate\Http\Request $r) {
 Route::middleware(['auth'])->group(function () {
     Route::get('/payments',        [\App\Http\Controllers\PaymentController::class,'take'])->name('payments');
     Route::post('/payments',       [\App\Http\Controllers\PaymentController::class,'store'])->name('payments.store');
+    Route::put('/payments/{id}',   [\App\Http\Controllers\PaymentController::class,'update'])->name('payments.update');
+    Route::delete('/payments/{id}',[\App\Http\Controllers\PaymentController::class,'destroy'])->name('payments.destroy');
     Route::get('/payments/export', [\App\Http\Controllers\PaymentController::class,'exportCsv'])->name('payments.export');
     Route::get('/payments/print',  [\App\Http\Controllers\PaymentController::class,'print'])->name('payments.print');
     Route::get('/accounts',        [\App\Http\Controllers\PaymentController::class,'summary'])->name('accounts.summary');
