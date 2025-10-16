@@ -45,6 +45,13 @@
         align-items: baseline;
     }
     
+    /* Button styling */
+    .no-print button,
+    .no-print a {
+        white-space: nowrap;
+        min-width: auto;
+    }
+    
     /* Mobile Responsive */
     @media (max-width: 768px) {
         .compact-page {
@@ -171,15 +178,15 @@
                             <h1 class="text-3xl font-bold text-gray-900 mb-1">Student Timetable</h1>
                             <p class="text-base text-gray-600">Reference: <span class="font-semibold text-blue-600">{{ $reference }}</span></p>
                         </div>
-                        <div class="no-print flex gap-2">
+                        <div class="no-print flex gap-3">
                             @if($index === 0)
-                                <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2">
+                                <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                                     </svg>
                                     Print Timetable
                                 </button>
-                                <a href="{{ route('students.create') }}" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2">
+                                <a href="{{ route('students.create') }}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                                     </svg>
@@ -254,14 +261,14 @@
                         <h1 class="text-3xl font-bold text-gray-900 mb-1">Student Timetable</h1>
                         <p class="text-base text-gray-600">Reference: <span class="font-semibold text-blue-600">{{ $reference }}</span></p>
                     </div>
-                    <div class="no-print flex gap-2">
-                        <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2">
+                    <div class="no-print flex gap-3">
+                        <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                             </svg>
                             Print Timetable
                         </button>
-                        <a href="{{ route('students.create') }}" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2">
+                        <a href="{{ route('students.create') }}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                             </svg>
