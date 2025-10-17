@@ -33,8 +33,8 @@ class PaymentVerificationController extends Controller
                     ->where('invoices.student_id', $student->id)
                     ->sum('payment_transactions.amount');
                 
-                // Expected amount (deposit + payment)
-                $expectedTotal = ($student->deposit ?? 0) + ($student->payment ?? 0);
+                // Expected amount (payment only - deposit shown for reference but not included)
+                $expectedTotal = ($student->payment ?? 0);
                 
                 // Balance
                 $balance = $expectedTotal - $totalPaid;

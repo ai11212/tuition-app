@@ -72,8 +72,10 @@
                         <td class="px-4 py-3 text-right">
                             <div class="font-medium">£{{ number_format($student->expected_total, 2) }}</div>
                             <div class="text-xs text-gray-500">
-                                D: £{{ number_format($student->deposit, 2) }} + 
-                                P: £{{ number_format($student->payment, 2) }}
+                                Payment: £{{ number_format($student->payment, 2) }}
+                                @if($student->deposit > 0)
+                                    <br><span class="text-gray-400">(Deposit: £{{ number_format($student->deposit, 2) }} - reference only)</span>
+                                @endif
                             </div>
                         </td>
                         <td class="px-4 py-3 text-right font-medium text-green-700">
