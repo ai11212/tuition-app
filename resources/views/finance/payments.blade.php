@@ -55,7 +55,12 @@
         </div>
         <div>
           <span class="text-blue-700 font-medium">Name:</span><br>
-          <span class="text-lg">{{ $studentDetails['student']->first_name }} {{ $studentDetails['student']->last_name }}</span>
+          @php
+            $siblings = \App\Models\Student::where('reference', $studentDetails['student']->reference)->get();
+          @endphp
+          @foreach($siblings as $sibling)
+            <span class="text-lg">{{ $sibling->first_name }} {{ $sibling->last_name }}</span><br>
+          @endforeach
         </div>
         <div>
           <span class="text-blue-700 font-medium">Deposit:</span><br>
@@ -102,6 +107,7 @@
       </div>
       
       {{-- Book Details --}}
+      @if($studentDetails['total_paid'] == 0)
       <div class="mt-4 pt-3 border-t border-blue-200">
         
         {{-- Assigned Books Section --}}
@@ -166,6 +172,7 @@
           </div>
         @endif
       </div>
+      @endif
       @if($studentDetails['student']->guardian_name)
         <div class="mt-4 pt-3 border-t border-blue-200 text-sm">
           <span class="text-blue-700 font-medium">Guardian:</span>
