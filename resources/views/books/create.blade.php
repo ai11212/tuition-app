@@ -50,9 +50,9 @@
 
                         @if(Schema::hasColumn('books', 'student_reference'))
                         <div class="mb-3">
-                            <label class="form-label">Student Reference (Optional)</label>
+                            <label class="form-label">Student Reference *</label>
                             <input type="text" name="student_reference" class="form-control" 
-                                   placeholder="e.g., A251013110640" value="{{ old('student_reference') }}">
+                                   placeholder="e.g., A251013110640" value="{{ old('student_reference') }}" required>
                             <div class="form-text">
                                 <i class="bi bi-info-circle"></i> Leave empty for books available to all students
                             </div>
@@ -203,6 +203,10 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
+                        <label class="form-label">Reference *</label>
+                        <input type="text" name="reference" id="edit-reference" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Subject *</label>
                         <input type="text" name="subject" id="edit-subject" class="form-control" required>
                     </div>
@@ -216,8 +220,8 @@
                     </div>
                     @if(Schema::hasColumn('books', 'student_reference'))
                     <div class="mb-3">
-                        <label class="form-label">Student Reference (Optional)</label>
-                        <input type="text" name="student_reference" id="edit-student-reference" class="form-control">
+                        <label class="form-label">Student Reference *</label>
+                        <input type="text" name="student_reference" id="edit-student-reference" class="form-control" required>
                         <div class="form-text">Leave empty for general books</div>
                     </div>
                     @endif

@@ -21,7 +21,7 @@
 <tr class="bg-gray-50 border-b"><th class="p-2 text-left">Date</th><th>Student</th><th>Time slot</th><th>Subject/Teacher</th><th>Status</th></tr>
 @foreach($rows as $r)
 <tr class="border-b">
-  <td class="p-2">{{ $r->date }}</td>
+  <td class="p-2">{{ \Carbon\Carbon::parse($r->date)->format('d/m/Y') }}</td>
   <td>{{ $r->student?->full_name }} ({{ $r->student?->reference }})</td>
   <td>{{ $r->time ?? '-' }}</td>
   <td>{{ $r->subject ?? '-' }} {{ $r->teacher ? '(' . $r->teacher . ')' : '' }}</td>

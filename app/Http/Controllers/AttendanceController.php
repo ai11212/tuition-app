@@ -10,9 +10,15 @@ class AttendanceController extends Controller {
         $date = $r->input('date', date('Y-m-d'));
         $reference = $r->input('reference');
         $subject = $r->input('subject');
+        
+        // Check if selected date is weekend (Saturday=6, Sunday=7) or Friday (5)
+        $dayOfWeek = date('N', strtotime($date));
+        $isWeekend = in_array($dayOfWeek, [6, 7]);
+        $isFriday = ($dayOfWeek == 5);
+        
         $students = Student::when($reference,function($q)use($reference){ $q->where('reference',$reference); })
                     ->orderBy('first_name')->get();
-        return view('attendance.sheet', compact('students','date','reference','subject'));
+        return view('attendance.sheet', compact('students','date','reference','subject','isWeekend','isFriday'));
     }
 
     // Save attendance for many students
