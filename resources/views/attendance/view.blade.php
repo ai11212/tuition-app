@@ -11,7 +11,7 @@
   <select name="student_id" class="border p-2">
     <option value="">Any student</option>
     @foreach($students as $s)
-      <option value="{{ $s->id }}" @selected($studentId==$s->id)>{{ $s->full_name }} ({{ $s->reference }})</option>
+      <option value="{{ $s->id }}" @selected($studentId==$s->id)>{{ $s->first_name }} {{ $s->last_name }} ({{ $s->reference }})</option>
     @endforeach
   </select>
   <input name="teacher" value="{{ $teacher }}" class="border p-2" placeholder="Teacher (optional)">
@@ -22,7 +22,7 @@
 @foreach($rows as $r)
 <tr class="border-b">
   <td class="p-2">{{ \Carbon\Carbon::parse($r->date)->format('d/m/Y') }}</td>
-  <td>{{ $r->student?->full_name }} ({{ $r->student?->reference }})</td>
+  <td>{{ $r->student ? $r->student->first_name . ' ' . $r->student->last_name : '' }} ({{ $r->student?->reference }})</td>
   <td>{{ $r->time ?? '-' }}</td>
   <td>{{ $r->subject ?? '-' }} {{ $r->teacher ? '(' . $r->teacher . ')' : '' }}</td>
   <td class="{{ $r->status=='present'?'text-green-700':'text-red-700' }}">{{ ucfirst($r->status) }}</td>
