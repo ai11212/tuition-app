@@ -23,7 +23,10 @@
 @if(Schema::hasColumn('books', 'student_reference'))
 <td class="text-sm">
   @if(isset($b->student_reference) && $b->student_reference)
-    <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">{{ $b->student_reference }}</span>
+    <div>
+      <strong class="block text-sm">{{ $b->first_name }} {{ $b->last_name }}</strong>
+      <span class="text-gray-500 text-xs">{{ $b->student_reference }}</span>
+    </div>
   @else
     <span class="text-gray-500 text-xs">General</span>
   @endif

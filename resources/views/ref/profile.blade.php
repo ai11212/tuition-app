@@ -1,20 +1,120 @@
 @extends('layouts.app')
 @section('content')
-<h1 class="text-xl font-semibold mb-4">Reference: {{ $reference }}</h1>
+<h1 class="text-xl font-semibold mb-4">Student Profile</h1>
+
 @if($student)
-  <div class="mb-4 p-4 bg-gray-50 rounded">
-    <div class="font-semibold">{{ $student->full_name }}</div>
-    <div>{{ $student->phone }} {{ $student->email ? '• '.$student->email : '' }}</div>
-    <a class="text-blue-600" href="{{ route('students.edit',$student) }}">Edit student</a>
+  {{-- Student Information --}}
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+    <h2 class="text-lg font-semibold mb-4 text-blue-700">Student Information</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div>
+        <span class="text-blue-700 font-medium">Reference:</span><br>
+        <span class="text-lg">{{ $student->reference }}</span>
+      </div>
+      <div>
+        <span class="text-blue-700 font-medium">Name:</span><br>
+        <span class="text-lg">{{ $student->first_name }} {{ $student->last_name }}</span>
+      </div>
+      <div>
+        <span class="text-blue-700 font-medium">Date of Birth:</span><br>
+        <span class="text-lg">{{ $student->dob ? \Carbon\Carbon::parse($student->dob)->format('d/m/Y') : '-' }}</span>
+      </div>
+      <div>
+        <span class="text-blue-700 font-medium">Deposit:</span><br>
+        <span class="text-lg font-semibold text-green-700">£{{ number_format($student->deposit ?? 0, 2) }}</span>
+        <span class="ms-2 badge {{ $student->deposit_paid ? 'bg-success' : 'bg-secondary' }}">
+          {{ $student->deposit_paid ? 'Paid' : 'Not Paid' }}
+        </span>
+      </div>
+      <div>
+        <span class="text-blue-700 font-medium">Payment:</span><br>
+        <span class="text-lg">£{{ number_format($student->payment ?? 0, 2) }}</span>
+      </div>
+      @if($student->guardian_name)
+      <div class="md:col-span-3">
+        <span class="text-blue-700 font-medium">Guardian:</span><br>
+        <span class="text-lg">{{ $student->guardian_name }} 
+          @if($student->guardian_phone)
+            ({{ $student->guardian_phone }})
+          @endif
+        </span>
+      </div>
+      @endif
+    </div>
+  </div>
+
+  {{-- Payment Status --}}
+  @if(isset($paymentDetails))
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+    <h2 class="text-lg font-semibold mb-4 text-blue-700">Payment Status</h2>
+    <div class="grid md:grid-cols-4 gap-4">
+      <div class="bg-blue-50 p-4 rounded">
+        <div class="text-sm text-blue-700 font-medium mb-1">Total Payments Made</div>
+        <div class="text-2xl font-bold text-blue-900">£{{ number_format($paymentDetails['total_paid'], 2) }}</div>
+        <div class="text-xs text-blue-600 mt-1">Expected: £{{ number_format($paymentDetails['expected_total'], 2) }}</div>
+      </div>
+      <div class="bg-{{ $paymentDetails['payment_pending'] > 0 ? 'orange' : 'green' }}-50 p-4 rounded">
+        <div class="text-sm text-{{ $paymentDetails['payment_pending'] > 0 ? 'orange' : 'green' }}-700 font-medium mb-1">Payment Pending</div>
+        <div class="text-2xl font-bold text-{{ $paymentDetails['payment_pending'] > 0 ? 'orange' : 'green' }}-900">£{{ number_format($paymentDetails['payment_pending'], 2) }}</div>
+        <div class="text-xs text-{{ $paymentDetails['payment_pending'] > 0 ? 'orange' : 'green' }}-600 mt-1">{{ $paymentDetails['payment_pending'] > 0 ? 'Outstanding amount' : 'Fully paid' }}</div>
+      </div>
+      <div class="bg-green-50 p-4 rounded">
+        <div class="text-sm text-green-700 font-medium mb-1">Book Payments Pending</div>
+        <div class="text-2xl font-bold text-green-900">£{{ number_format($paymentDetails['book_payments_pending'], 2) }}</div>
+        <div class="text-xs text-green-600 mt-1">Total books value: £{{ number_format($paymentDetails['total_book_price'], 2) }}</div>
+      </div>
+      <div class="bg-purple-50 p-4 rounded flex items-center justify-center">
+        <a href="{{ route('payments', ['reference' => $student->reference]) }}" 
+           class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
+          Record Payment →
+        </a>
+      </div>
+    </div>
+  </div>
+  @endif
+
+  {{-- Timetable --}}
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+    <h2 class="text-lg font-semibold mb-4 text-blue-700">Time Table</h2>
+    @if($timetable->count() > 0)
+    <table class="w-full">
+      <tr class="bg-gray-50 border-b">
+        <th class="p-2 text-left">Day</th>
+        <th>Start</th>
+        <th>End</th>
+        <th>Subject</th>
+        <th>Teacher</th>
+        <th>Room</th>
+      </tr>
+      @foreach($timetable as $t)
+      <tr class="border-b">
+        <td class="p-2">{{ $t->day_of_week }}</td>
+        <td>{{ $t->start_time }}</td>
+        <td>{{ $t->end_time }}</td>
+        <td>{{ $t->subject }}</td>
+        <td>{{ $t->teacher_name }}</td>
+        <td>{{ $t->room }}</td>
+      </tr>
+      @endforeach
+    </table>
+    @else
+    <p class="text-gray-500">No timetable entries found.</p>
+    @endif
+  </div>
+
+  {{-- Quick Actions --}}
+  <div class="flex gap-3 mb-6">
+    <a href="{{ route('students.edit', $student) }}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+      Edit Student
+    </a>
+    <a href="{{ route('attendance.sheet', ['reference' => $student->reference]) }}" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+      Mark Attendance
+    </a>
+    <a href="{{ route('ref.form') }}" class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300">
+      ← New Search
+    </a>
   </div>
 @else
-  <div class="mb-4 text-gray-600">No student found for this reference.</div>
+  <div class="mb-4 text-gray-600">No student found.</div>
 @endif
-<h2 class="font-semibold mb-2">Time Table</h2>
-<table class="w-full">
-<tr class="bg-gray-50 border-b"><th class="p-2 text-left">Day</th><th>Start</th><th>End</th><th>Subject</th><th>Teacher</th><th>Room</th></tr>
-@foreach($timetable as $t)
-<tr class="border-b"><td class="p-2">{{ $t->day_of_week }}</td><td>{{ $t->start_time }}</td><td>{{ $t->end_time }}</td><td>{{ $t->subject }}</td><td>{{ $t->teacher_name }}</td><td>{{ $t->room }}</td></tr>
-@endforeach
-</table>
 @endsection

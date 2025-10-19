@@ -29,13 +29,55 @@ class AttendanceController extends Controller {
             'statuses'=>'array'  // [student_id => 'present'|'absent']
         ]);
         $time = $r->input('time');
+        
+        $duplicates = [];
+        $saved = 0;
+        
         foreach(($data['statuses'] ?? []) as $studentId => $status){
-            StudentAttendance::updateOrCreate(
-                ['student_id'=>$studentId,'date'=>$data['date'],'subject'=>$data['subject'],'time'=>$time],
-                ['status'=>$status,'time'=>$time]
-            );
+            // Check if attendance already exists for this student on this date+time (can't be in two places)
+            $existingTime = StudentAttendance::where('student_id', $studentId)
+                ->where('date', $data['date'])
+                ->where('time', $time)
+                ->first();
+            
+            // Check if attendance already exists for this student on this date+subject (database constraint)
+            $existingSubject = StudentAttendance::where('student_id', $studentId)
+                ->where('date', $data['date'])
+                ->where('subject', $data['subject'])
+                ->first();
+            
+            $student = \App\Models\Student::find($studentId);
+            $studentName = $student ? $student->first_name . ' ' . $student->last_name : 'Unknown';
+            
+            if ($existingTime) {
+                // Student already has attendance for this time slot
+                $duplicates[] = $studentName . ' (already logged at ' . $time . ')';
+                continue;
+            }
+            
+            if ($existingSubject) {
+                // Student already has attendance for this subject today
+                $duplicates[] = $studentName . ' (already logged for ' . $data['subject'] . ' today)';
+                continue;
+            }
+            
+            // Save new attendance
+            StudentAttendance::create([
+                'student_id' => $studentId,
+                'date' => $data['date'],
+                'subject' => $data['subject'],
+                'time' => $time,
+                'status' => $status
+            ]);
+            $saved++;
         }
-        return back()->with('ok','Attendance saved');
+        
+        if (count($duplicates) > 0) {
+            $message = "Attendance saved for $saved student(s). Skipped duplicates: " . implode(', ', $duplicates);
+            return back()->with('warning', $message);
+        }
+        
+        return back()->with('ok', 'Attendance saved successfully');
     }
 
     // View attendance (students / teacher)
@@ -58,5 +100,12 @@ class AttendanceController extends Controller {
         $rows = StudentAttendance::with('student')->where('date',$date)->get()->keyBy('student_id');
         $students = Student::orderBy('first_name')->get();
         return view('attendance.status', compact('date','rows','students'));
+    }
+
+    // Delete attendance record
+    public function destroy(StudentAttendance $attendance)
+    {
+        $attendance->delete();
+        return back()->with('ok', 'Attendance record deleted successfully');
     }
 }

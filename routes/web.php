@@ -42,12 +42,14 @@ Route::get('/debug/admission-public', function (\Illuminate\Http\Request $r) {
 });
     // Staff + Books
     Route::resource('staff', StaffController::class)->except(['show']);
+    Route::get('/books/get-siblings', [BookController::class, 'getSiblings'])->name('books.get-siblings');
     Route::resource('books', BookController::class)->except(['show']);
 
     // Attendance
     Route::get('/attendance', [AttendanceController::class,'sheet'])->name('attendance.sheet');
     Route::post('/attendance/save', [AttendanceController::class,'save'])->name('attendance.save');
     Route::get('/attendance/view', [AttendanceController::class,'view'])->name('attendance.view');
+    Route::delete('/attendance/{attendance}', [AttendanceController::class,'destroy'])->name('attendance.destroy');
     Route::get('/attendance/status', [AttendanceController::class,'statusByDate'])->name('attendance.status');
     Route::get('/attendance/staff', [StaffAttendanceController::class,'sheet'])->name('attendance.staff');
     Route::post('/attendance/staff/save', [StaffAttendanceController::class,'save'])->name('attendance.staff.save');

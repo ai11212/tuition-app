@@ -1,24 +1,42 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\Book;
+use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
 class BookController extends Controller {
-    public function index(){ $items = Book::latest()->paginate(20); return view('books.index', compact('items')); }
+    public function index(){ 
+        // Join with students table to get student names
+        $query = Book::query();
+        
+        if (Schema::hasColumn('books', 'student_reference')) {
+            $query->leftJoin('students', 'books.student_reference', '=', 'students.reference')
+                  ->select('books.*', 'students.first_name', 'students.last_name');
+        }
+        
+        $items = $query->latest('books.created_at')->paginate(20); 
+        return view('books.index', compact('items')); 
+    }
     
     public function create(Request $request)
     { 
-        // Build query with search and filter
+        // Build query with search and filter - join with students to get names
         $query = Book::query();
+        
+        // Join with students table to get student names
+        if (Schema::hasColumn('books', 'student_reference')) {
+            $query->leftJoin('students', 'books.student_reference', '=', 'students.reference')
+                  ->select('books.*', 'students.first_name', 'students.last_name');
+        }
         
         // Search by reference, subject, or title
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('reference', 'like', "%{$search}%")
-                  ->orWhere('subject', 'like', "%{$search}%")
-                  ->orWhere('title', 'like', "%{$search}%");
+                $q->where('books.reference', 'like', "%{$search}%")
+                  ->orWhere('books.subject', 'like', "%{$search}%")
+                  ->orWhere('books.title', 'like', "%{$search}%");
             });
         }
         
@@ -26,15 +44,37 @@ class BookController extends Controller {
         if ($request->filled('student_ref') && Schema::hasColumn('books', 'student_reference')) {
             $studentRef = $request->student_ref;
             $query->where(function($q) use ($studentRef) {
-                $q->where('student_reference', 'like', "%{$studentRef}%")
-                  ->orWhereNull('student_reference');
+                $q->where('books.student_reference', 'like', "%{$studentRef}%")
+                  ->orWhereNull('books.student_reference');
             });
         }
         
-        $books = $query->latest()->paginate(15)->withQueryString();
+        $books = $query->latest('books.created_at')->paginate(15)->withQueryString();
         
         return view('books.create', compact('books')); 
     }
+    
+    // AJAX endpoint to get siblings by reference
+    public function getSiblings(Request $request)
+    {
+        $reference = $request->get('reference');
+        
+        if (!$reference) {
+            return response()->json(['success' => false, 'message' => 'Reference required']);
+        }
+        
+        // Find all students with this reference
+        $siblings = Student::where('reference', $reference)
+            ->select('id', 'reference', 'first_name', 'last_name')
+            ->get();
+        
+        return response()->json([
+            'success' => true,
+            'siblings' => $siblings,
+            'count' => $siblings->count()
+        ]);
+    }
+    
     public function store(Request $r){
         // Check if student_reference column exists
         $hasStudentReferenceColumn = Schema::hasColumn('books', 'student_reference');
@@ -48,21 +88,44 @@ class BookController extends Controller {
         
         // Add student_reference validation only if column exists
         if ($hasStudentReferenceColumn) {
-            $rules['student_reference'] = 'nullable|string';
+            $rules['students'] = 'nullable|array'; // Accept array of student references
+            $rules['students.*'] = 'string'; // Each element should be a string
         }
         
         $data = $r->validate($rules);
         
-        // Auto-generate reference
-        $data['reference'] = 'BK-' . strtoupper(\Illuminate\Support\Str::random(6));
+        // Check if multiple students were selected
+        $students = $r->input('students', []);
         
-        // Remove student_reference from data if column doesn't exist
-        if (!$hasStudentReferenceColumn && isset($data['student_reference'])) {
-            unset($data['student_reference']);
+        if (!empty($students) && $hasStudentReferenceColumn) {
+            // Create a book record for each selected student
+            $bookCount = 0;
+            foreach ($students as $studentReference) {
+                $bookData = [
+                    'reference' => 'BK-' . strtoupper(\Illuminate\Support\Str::random(6)),
+                    'subject' => $data['subject'],
+                    'title' => $data['title'],
+                    'price' => $data['price'],
+                    'student_reference' => $studentReference
+                ];
+                
+                Book::create($bookData);
+                $bookCount++;
+            }
+            
+            return redirect()->route('books.index')->with('ok', "Book added for {$bookCount} student(s)");
+        } else {
+            // No students selected - create book without assignment (original behavior)
+            $data['reference'] = 'BK-' . strtoupper(\Illuminate\Support\Str::random(6));
+            
+            // Remove students array from data if column doesn't exist
+            if (!$hasStudentReferenceColumn && isset($data['students'])) {
+                unset($data['students']);
+            }
+            
+            Book::create($data); 
+            return redirect()->route('books.index')->with('ok','Book added');
         }
-        
-        Book::create($data); 
-        return redirect()->route('books.index')->with('ok','Book added');
     }
     public function edit(Book $book){ return view('books.edit', compact('book')); }
     public function update(Request $r, Book $book){

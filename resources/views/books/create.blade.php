@@ -21,6 +21,33 @@
                 <div class="card-body">
                     <form method="POST" action="{{ route('books.store') }}" id="add-book-form">
                         @csrf
+                        
+                        @if(Schema::hasColumn('books', 'student_reference'))
+                        <!-- Student Reference Search -->
+                        <div class="mb-3">
+                            <label for="reference_search" class="form-label">Student Reference *</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="reference_search" 
+                                       placeholder="Enter reference to find siblings">
+                                <button type="button" class="btn btn-outline-secondary" onclick="searchSiblings()">
+                                    <i class="bi bi-search"></i> Search
+                                </button>
+                            </div>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i> Optional: Search to assign book to specific siblings
+                            </div>
+                        </div>
+
+                        <!-- Sibling Selection (Hidden by default) -->
+                        <div id="sibling_selection" class="mb-3" style="display: none;">
+                            <label class="form-label">Select Students:</label>
+                            <div id="sibling_list" class="border rounded p-3 bg-light">
+                                <!-- Checkboxes will be inserted here by JavaScript -->
+                            </div>
+                            <small class="text-muted">Select one or more siblings to assign this book.</small>
+                        </div>
+                        @endif
+
                         <div class="mb-3">
                             <label class="form-label">Subject *</label>
                             <input type="text" name="subject" class="form-control @error('subject') is-invalid @enderror" 
@@ -47,17 +74,6 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-
-                        @if(Schema::hasColumn('books', 'student_reference'))
-                        <div class="mb-3">
-                            <label class="form-label">Student Reference *</label>
-                            <input type="text" name="student_reference" class="form-control" 
-                                   placeholder="e.g., A251013110640" value="{{ old('student_reference') }}" required>
-                            <div class="form-text">
-                                <i class="bi bi-info-circle"></i> Leave empty for books available to all students
-                            </div>
-                        </div>
-                        @endif
 
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary">
@@ -137,7 +153,10 @@
                                     @if(Schema::hasColumn('books', 'student_reference'))
                                     <td>
                                         @if($book->student_reference)
-                                            <span class="badge bg-info text-white">{{ $book->student_reference }}</span>
+                                            <div>
+                                                <strong class="d-block">{{ $book->first_name }} {{ $book->last_name }}</strong>
+                                                <small class="text-muted">{{ $book->student_reference }}</small>
+                                            </div>
                                         @else
                                             <span class="badge bg-secondary">General</span>
                                         @endif
@@ -304,6 +323,48 @@ document.querySelectorAll('#search-form input').forEach(input => {
         }, 500);
     });
 });
+
+// Function to search for siblings by reference
+function searchSiblings() {
+    const reference = document.getElementById('reference_search').value.trim();
+    
+    if (!reference) {
+        alert('Please enter a student reference');
+        return;
+    }
+    
+    // Show loading state
+    document.getElementById('sibling_list').innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div> Loading...</div>';
+    document.getElementById('sibling_selection').style.display = 'block';
+    
+    // Fetch siblings via AJAX
+    fetch(`/books/get-siblings?reference=${encodeURIComponent(reference)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.siblings.length > 0) {
+                // Build checkbox list
+                let html = '';
+                data.siblings.forEach(sibling => {
+                    html += `
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="students[]" 
+                                   value="${sibling.reference}" id="sibling_${sibling.id}">
+                            <label class="form-check-label" for="sibling_${sibling.id}">
+                                ${sibling.first_name} ${sibling.last_name} (${sibling.reference})
+                            </label>
+                        </div>
+                    `;
+                });
+                document.getElementById('sibling_list').innerHTML = html;
+            } else {
+                document.getElementById('sibling_list').innerHTML = '<div class="text-danger">No students found with this reference.</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('sibling_list').innerHTML = '<div class="text-danger">Error loading siblings. Please try again.</div>';
+        });
+}
 </script>
 
 @endsection
