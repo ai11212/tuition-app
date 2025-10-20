@@ -36,23 +36,38 @@ class ReferenceProfileController extends Controller {
             return redirect()->route('ref.form')->with('warning', 'No students found matching your search criteria');
         }
         
-        // Multiple results - show list
-        if ($students->count() > 1) {
+        // Multiple results AND not exact match - show search results list
+        if ($students->count() > 1 && !$r->has('exact')) {
             return view('ref.search_results', compact('students'));
         }
         
-        // Single result - show full details
+        // Single result OR exact match (show all siblings together) - show full profile
+        // For siblings, show the first student as primary but include all sibling data
         $student = $students->first();
-        $timetable = Timetable::where('student_reference', $student->reference)
-            ->orderBy('day_of_week')
-            ->get();
+        $allSiblings = $students; // All students with same reference (for family view)
+        
+        // Get timetable for EACH sibling separately (not mixed)
+        $siblingsWithTimetables = $allSiblings->map(function($sibling) {
+            return [
+                'student' => $sibling,
+                'timetable' => Timetable::where('student_id', $sibling->id)
+                    ->orderBy('day_of_week')
+                    ->orderBy('start_time')
+                    ->get()
+            ];
+        });
         
         // Calculate payment details (same logic as PaymentController)
         $totalPaid = PaymentTransaction::leftJoin('invoices', 'payment_transactions.invoice_id', '=', 'invoices.id')
             ->where('invoices.student_id', $student->id)
             ->sum('payment_transactions.amount');
         
-        $assignedBooks = Book::where('student_reference', $student->reference)->get();
+        // Get assigned books - Note: student_reference stores student ID, not reference string
+        $assignedBooks = Book::leftJoin('students', 'books.student_reference', '=', 'students.id')
+            ->where('students.reference', $student->reference)
+            ->select('books.*')
+            ->get();
+        
         $studentSubjects = Timetable::where('student_id', $student->id)->pluck('subject')->unique();
         $subjectBooks = Book::whereNull('student_reference')->whereIn('subject', $studentSubjects)->get();
         $totalBookPrice = $assignedBooks->sum('price') + $subjectBooks->sum('price');
@@ -70,6 +85,6 @@ class ReferenceProfileController extends Controller {
             'total_book_price' => $totalBookPrice
         ];
         
-        return view('ref.profile', compact('student', 'timetable', 'paymentDetails'));
+        return view('ref.profile', compact('student', 'allSiblings', 'siblingsWithTimetables', 'paymentDetails'));
     }
 }

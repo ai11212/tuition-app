@@ -76,30 +76,35 @@
   {{-- Timetable --}}
   <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
     <h2 class="text-lg font-semibold mb-4 text-blue-700">Time Table</h2>
-    @if($timetable->count() > 0)
-    <table class="w-full">
-      <tr class="bg-gray-50 border-b">
-        <th class="p-2 text-left">Day</th>
-        <th>Start</th>
-        <th>End</th>
-        <th>Subject</th>
-        <th>Teacher</th>
-        <th>Room</th>
-      </tr>
-      @foreach($timetable as $t)
-      <tr class="border-b">
-        <td class="p-2">{{ $t->day_of_week }}</td>
-        <td>{{ $t->start_time }}</td>
-        <td>{{ $t->end_time }}</td>
-        <td>{{ $t->subject }}</td>
-        <td>{{ $t->teacher_name }}</td>
-        <td>{{ $t->room }}</td>
-      </tr>
-      @endforeach
-    </table>
-    @else
-    <p class="text-gray-500">No timetable entries found.</p>
-    @endif
+    @foreach($siblingsWithTimetables as $siblingData)
+      <div class="mb-6 @if(!$loop->last) border-b border-gray-300 pb-6 @endif">
+        <h3 class="text-md font-semibold mb-3 text-gray-700">{{ $siblingData['student']->first_name }} {{ $siblingData['student']->last_name }}</h3>
+        @if($siblingData['timetable']->count() > 0)
+        <table class="w-full">
+          <tr class="bg-gray-50 border-b">
+            <th class="p-2 text-left">Day</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Subject</th>
+            <th>Teacher</th>
+            <th>Room</th>
+          </tr>
+          @foreach($siblingData['timetable'] as $t)
+          <tr class="border-b">
+            <td class="p-2">{{ $t->day_of_week }}</td>
+            <td>{{ $t->start_time }}</td>
+            <td>{{ $t->end_time }}</td>
+            <td>{{ $t->subject }}</td>
+            <td>{{ $t->teacher_name }}</td>
+            <td>{{ $t->room }}</td>
+          </tr>
+          @endforeach
+        </table>
+        @else
+        <p class="text-gray-500">No timetable entries found.</p>
+        @endif
+      </div>
+    @endforeach
   </div>
 
   {{-- Quick Actions --}}
