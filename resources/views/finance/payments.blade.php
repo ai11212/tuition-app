@@ -107,7 +107,7 @@
       </div>
       
       {{-- Book Details --}}
-      @if($studentDetails['total_paid'] == 0)
+      @if($studentDetails['show_books'])
       <div class="mt-4 pt-3 border-t border-blue-200">
         
         {{-- Assigned Books Section --}}
@@ -123,6 +123,7 @@
               @foreach($studentDetails['assigned_books'] as $book)
                 <div class="flex justify-between items-center bg-green-100 px-3 py-2 rounded border-l-4 border-green-500">
                   <div>
+                    <span class="text-xs font-semibold text-green-600 block mb-1">{{ $book->first_name }} {{ $book->last_name }}</span>
                     <span class="font-medium text-green-800">{{ $book->subject }}</span><br>
                     <span class="text-green-900 font-medium">{{ $book->title }}</span>
                     <span class="text-xs text-green-700 block">Ref: {{ $book->reference }}</span>

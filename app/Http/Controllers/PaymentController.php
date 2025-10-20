@@ -72,6 +72,17 @@ class PaymentController extends Controller
                     ->where('invoices.student_id', $exactStudent->id)
                     ->sum('payment_transactions.amount');
                 
+                // Get latest payment date for this student (for smart book detection)
+                // Use paid_at if available, fallback to paid_on for older records
+                $latestPaymentResult = PaymentTransaction::leftJoin('invoices', 'payment_transactions.invoice_id', '=', 'invoices.id')
+                    ->where('invoices.student_id', $exactStudent->id)
+                    ->orderBy('payment_transactions.paid_at', 'desc')
+                    ->orderBy('payment_transactions.paid_on', 'desc')
+                    ->select(DB::raw('COALESCE(payment_transactions.paid_at, payment_transactions.paid_on) as payment_date'))
+                    ->first();
+                
+                $latestPaymentDate = $latestPaymentResult ? $latestPaymentResult->payment_date : null;
+                
                 // Check if student_reference column exists in books table
                 $hasStudentReferenceColumn = Schema::hasColumn('books', 'student_reference');
                 
@@ -82,9 +93,15 @@ class PaymentController extends Controller
                 $subjectBooks = collect();
                 
                 if ($hasStudentReferenceColumn) {
-                    // Priority 1: Books directly assigned to this student reference
-                    $assignedBooks = \App\Models\Book::where('student_reference', $exactStudent->reference)
-                        ->orderBy('subject')->orderBy('title')->get();
+                    // Priority 1: Books directly assigned to ALL students under this reference (all siblings)
+                    // Note: student_reference now stores student ID, so we join on ID
+                    $assignedBooks = \App\Models\Book::leftJoin('students', 'books.student_reference', '=', 'students.id')
+                        ->where('students.reference', $exactStudent->reference)
+                        ->select('books.*', 'students.first_name', 'students.last_name', 'students.id as student_id')
+                        ->orderBy('students.first_name')
+                        ->orderBy('books.subject')
+                        ->orderBy('books.title')
+                        ->get();
                     
 
                 } else {
@@ -129,6 +146,9 @@ class PaymentController extends Controller
                 $books = $assignedBooks->concat($subjectBooks);
                 $totalBookPrice = $books->sum('price');
                 
+                // Get latest book creation date for smart detection
+                $latestBookDate = $assignedBooks->count() > 0 ? $assignedBooks->max('created_at') : null;
+                
                 // If no books found by either method, try alternative matching
                 if ($books->count() == 0) {
                     // Try finding books where the book reference contains or matches student reference
@@ -157,11 +177,32 @@ class PaymentController extends Controller
                 $expectedTotal = ($exactStudent->payment ?? 0) + $totalBookPrice;
                 $paymentPending = max(0, $expectedTotal - $totalPaid);
                 
+                // Smart Detection: Filter books to show only UNPAID books
+                // Logic: Show only books that were added AFTER the last payment
+                // This way, previously paid books stay hidden, and only new books appear
+                
+                $unpaidBooks = collect();
+                $showBooks = false;
+                
+                if ($totalPaid == 0 || !$latestPaymentDate) {
+                    // No payments made yet - show all books
+                    $unpaidBooks = $assignedBooks;
+                    $showBooks = $assignedBooks->count() > 0;
+                } else {
+                    // Filter books: show only those created AFTER the last payment
+                    $unpaidBooks = $assignedBooks->filter(function($book) use ($latestPaymentDate) {
+                        if (!$book->created_at) return false;
+                        return strtotime($book->created_at) > strtotime($latestPaymentDate);
+                    });
+                    $showBooks = $unpaidBooks->count() > 0;
+                }
+                
                 $studentDetails = [
                     'student' => $exactStudent,
                     'total_paid' => $totalPaid,
                     'books' => $books,
-                    'assigned_books' => $assignedBooks,
+                    'assigned_books' => $unpaidBooks,  // Show only unpaid books
+                    'all_assigned_books' => $assignedBooks,  // Keep all books for reference
                     'subject_books' => $subjectBooks,
                     'student_subjects' => $studentSubjects,
                     'total_book_price' => $totalBookPrice,
@@ -171,7 +212,10 @@ class PaymentController extends Controller
                     'deposit_paid' => $exactStudent->deposit_paid ?? false,
                     'payment' => $exactStudent->payment ?? 0,
                     'expected_total' => $expectedTotal,
-                    'payment_pending' => $paymentPending
+                    'payment_pending' => $paymentPending,
+                    'show_books' => $showBooks,
+                    'latest_payment_date' => $latestPaymentDate,
+                    'latest_book_date' => $latestBookDate
                 ];
             }
         }
@@ -207,11 +251,26 @@ class PaymentController extends Controller
             'status'     => 'paid',
         ]);
 
+        $hasPaidAtColumn = Schema::hasColumn('payment_transactions','paid_at');
+        
+        // Convert date input to datetime for paid_at column
+        $paidAtValue = null;
+        if ($hasPaidAtColumn) {
+            if (!empty($data['paid_at'])) {
+                // Use the selected date but with current time (not midnight)
+                $selectedDate = date('Y-m-d', strtotime($data['paid_at']));
+                $currentTime = date('H:i:s');
+                $paidAtValue = $selectedDate . ' ' . $currentTime;
+            } else {
+                // Use current datetime if no date provided
+                $paidAtValue = now();
+            }
+        }
+        
         $transactionData = [
             'invoice_id' => $inv->id,
             'paid_on'    => $data['paid_at'] ? date('Y-m-d', strtotime($data['paid_at'])) : now()->toDateString(),
-            // set paid_at only if the column exists (shared hosting safety)
-            'paid_at'    => Schema::hasColumn('payment_transactions','paid_at') ? ($data['paid_at'] ?: now()) : null,
+            'paid_at'    => $paidAtValue,
             'amount'     => $data['amount'],
             'method'     => $data['method'],
             'notes'      => $data['notes'] ?? null,

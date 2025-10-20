@@ -216,13 +216,17 @@
                 ->where('invoices.student_id', $student->id)
                 ->sum('payment_transactions.amount');
             
-            // Get books
-            $assignedBooks = \App\Models\Book::where('student_reference', $student->reference)->get();
+            // Get books - NOTE: student_reference now stores student ID, not reference string
+            $assignedBooks = \App\Models\Book::leftJoin('students', 'books.student_reference', '=', 'students.id')
+                ->where('students.reference', $student->reference)
+                ->select('books.*')
+                ->get();
+            
             $studentSubjects = \App\Models\Timetable::where('student_id', $student->id)->pluck('subject')->unique();
             $subjectBooks = \App\Models\Book::whereNull('student_reference')->whereIn('subject', $studentSubjects)->get();
             $totalBookPrice = $assignedBooks->sum('price') + $subjectBooks->sum('price');
             
-            // Calculate balance (Expected - Paid)
+            // Calculate balance (Expected - Paid) - This matches "Payment Pending" on payment page
             $expectedTotal = ($student->payment ?? 0) + $totalBookPrice;
             $balanceDue = max(0, $expectedTotal - $totalPaid);
             
@@ -230,10 +234,10 @@
             $invoicePaid = $invoice->transactions->sum('amount');
         @endphp
 
-        <!-- Balance Amount (only if pending) -->
+        <!-- Balance Amount (only if pending) - Shows same as "Payment Pending" on payment page -->
         @if($balanceDue > 0)
         <div class="amount-total" style="background: transparent; border: none; padding: 10px 15px; font-size: 16px; font-weight: normal;">
-            Balance Amount: {{ number_format($balanceDue, 0) }}
+            Balance Amount: £{{ number_format($balanceDue, 2) }}
         </div>
         @endif
 

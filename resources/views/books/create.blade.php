@@ -152,10 +152,10 @@
                                     <td><strong>£{{ number_format($book->price, 2) }}</strong></td>
                                     @if(Schema::hasColumn('books', 'student_reference'))
                                     <td>
-                                        @if($book->student_reference)
+                                        @if($book->first_name && $book->last_name)
                                             <div>
                                                 <strong class="d-block">{{ $book->first_name }} {{ $book->last_name }}</strong>
-                                                <small class="text-muted">{{ $book->student_reference }}</small>
+                                                <small class="text-muted">{{ $book->student_ref }}</small>
                                             </div>
                                         @else
                                             <span class="badge bg-secondary">General</span>
@@ -345,10 +345,12 @@ function searchSiblings() {
                 // Build checkbox list
                 let html = '';
                 data.siblings.forEach(sibling => {
+                    // Create unique identifier: studentId|reference|firstName_lastName
+                    const uniqueId = `${sibling.id}|${sibling.reference}|${sibling.first_name}_${sibling.last_name}`;
                     html += `
                         <div class="form-check mb-2">
                             <input class="form-check-input" type="checkbox" name="students[]" 
-                                   value="${sibling.reference}" id="sibling_${sibling.id}">
+                                   value="${uniqueId}" id="sibling_${sibling.id}">
                             <label class="form-check-label" for="sibling_${sibling.id}">
                                 ${sibling.first_name} ${sibling.last_name} (${sibling.reference})
                             </label>

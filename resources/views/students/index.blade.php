@@ -47,18 +47,24 @@
         </tr>
       </thead>
       <tbody>
-        @forelse ($students as $student)
+        @forelse ($students as $group)
+        {{-- Primary Student Row --}}
         <tr class="border-t hover:bg-gray-50">
-          <td class="px-3 py-3 font-medium text-blue-600">{{ $student->reference }}</td>
-          <td class="px-3 py-3">{{ $student->first_name }} {{ $student->last_name }}</td>
-          <td class="px-3 py-3">{{ $student->guardian_name }}</td>
-          <td class="px-3 py-3">{{ $student->guardian_phone }}</td>
-          <td class="px-3 py-3">£{{ number_format($student->deposit ?? 0, 2) }}</td>
-          <td class="px-3 py-3">£{{ number_format($student->payment ?? 0, 2) }}</td>
+          <td class="px-3 py-3 font-medium text-blue-600">
+            {{ $group['primary']->reference }}
+            @if($group['siblings']->count() > 0)
+              <span class="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">{{ $group['siblings']->count() + 1 }} students</span>
+            @endif
+          </td>
+          <td class="px-3 py-3">{{ $group['primary']->first_name }} {{ $group['primary']->last_name }}</td>
+          <td class="px-3 py-3">{{ $group['primary']->guardian_name }}</td>
+          <td class="px-3 py-3">{{ $group['primary']->guardian_phone }}</td>
+          <td class="px-3 py-3">£{{ number_format($group['primary']->deposit ?? 0, 2) }}</td>
+          <td class="px-3 py-3">£{{ number_format($group['primary']->payment ?? 0, 2) }}</td>
           <td class="px-3 py-3 text-right whitespace-nowrap">
-            <a class="text-green-600 hover:text-green-800 mr-3" href="{{ route('student.timetable.print', $student->reference) }}">Print Timetable</a>
-            <a class="text-blue-600 hover:text-blue-800 mr-3" href="{{ route('students.edit', $student->reference) }}">Edit</a>
-            <form class="inline" method="POST" action="{{ route('students.destroy', $student->reference) }}" 
+            <a class="text-green-600 hover:text-green-800 mr-3" href="{{ route('student.timetable.print', $group['primary']->reference) }}">Print Timetable</a>
+            <a class="text-blue-600 hover:text-blue-800 mr-3" href="{{ route('students.edit', $group['primary']->reference) }}">Edit</a>
+            <form class="inline" method="POST" action="{{ route('students.destroy', $group['primary']->reference) }}" 
                   onsubmit="return confirm('Are you sure you want to delete this student and all related records (timetables, invoices, payments)?')">
               @csrf 
               @method('DELETE') 
@@ -66,6 +72,25 @@
             </form>
           </td>
         </tr>
+        
+        {{-- Sibling Rows (Indented) --}}
+        @foreach($group['siblings'] as $sibling)
+        <tr class="border-t bg-blue-50 hover:bg-blue-100">
+          <td class="px-3 py-3 pl-8 text-gray-600 text-sm">
+            <span class="inline-block mr-2">↳</span> {{ $sibling->reference }}
+          </td>
+          <td class="px-3 py-3 text-gray-700">{{ $sibling->first_name }} {{ $sibling->last_name }}</td>
+          <td class="px-3 py-3 text-gray-600 text-sm italic">Sibling</td>
+          <td class="px-3 py-3 text-gray-600">{{ $sibling->guardian_phone }}</td>
+          <td class="px-3 py-3 text-gray-600">£{{ number_format($sibling->deposit ?? 0, 2) }}</td>
+          <td class="px-3 py-3 text-gray-600">£{{ number_format($sibling->payment ?? 0, 2) }}</td>
+          <td class="px-3 py-3 text-right whitespace-nowrap">
+            <a class="text-green-600 hover:text-green-800 mr-3 text-sm" href="{{ route('student.timetable.print', $sibling->reference) }}">Print Timetable</a>
+            <span class="text-gray-400 text-sm">Edit via primary</span>
+          </td>
+        </tr>
+        @endforeach
+        
         @empty
         <tr>
           <td colspan="7" class="px-3 py-8 text-center text-gray-500">

@@ -22,10 +22,10 @@
 <td>£{{ number_format($b->price,2) }}</td>
 @if(Schema::hasColumn('books', 'student_reference'))
 <td class="text-sm">
-  @if(isset($b->student_reference) && $b->student_reference)
+  @if(isset($b->first_name) && $b->first_name)
     <div>
       <strong class="block text-sm">{{ $b->first_name }} {{ $b->last_name }}</strong>
-      <span class="text-gray-500 text-xs">{{ $b->student_reference }}</span>
+      <span class="text-gray-500 text-xs">{{ $b->student_ref }}</span>
     </div>
   @else
     <span class="text-gray-500 text-xs">General</span>

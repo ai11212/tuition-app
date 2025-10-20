@@ -14,13 +14,38 @@ class StudentController extends Controller
     {
         $reference = $request->input('reference');
         
-        $students = Student::query()
+        // Fetch all students
+        $allStudents = Student::query()
             ->when($reference, function($q) use ($reference) {
                 return $q->where('reference', 'like', $reference . '%');
             })
-            ->orderBy('created_at', 'desc')
-            ->paginate(20)
-            ->withQueryString();
+            ->orderBy('reference', 'desc')
+            ->orderBy('created_at', 'asc')  // First created = primary student
+            ->get();
+        
+        // Group students by reference
+        $groupedStudents = $allStudents->groupBy('reference')->map(function($group) {
+            // First student in the group is the primary (created first)
+            // Others are siblings
+            return [
+                'primary' => $group->first(),
+                'siblings' => $group->slice(1),  // All except first
+                'reference' => $group->first()->reference,
+            ];
+        })->values();
+        
+        // Paginate the grouped results
+        $perPage = 20;
+        $currentPage = \Illuminate\Pagination\Paginator::resolveCurrentPage();
+        $currentItems = $groupedStudents->slice(($currentPage - 1) * $perPage, $perPage);
+        
+        $students = new \Illuminate\Pagination\LengthAwarePaginator(
+            $currentItems,
+            $groupedStudents->count(),
+            $perPage,
+            $currentPage,
+            ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]
+        );
             
         return view('students.index', compact('students', 'reference'));
     }

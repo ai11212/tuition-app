@@ -11,8 +11,9 @@ class BookController extends Controller {
         $query = Book::query();
         
         if (Schema::hasColumn('books', 'student_reference')) {
-            $query->leftJoin('students', 'books.student_reference', '=', 'students.reference')
-                  ->select('books.*', 'students.first_name', 'students.last_name');
+            // Note: student_reference now stores student ID
+            $query->leftJoin('students', 'books.student_reference', '=', 'students.id')
+                  ->select('books.*', 'students.first_name', 'students.last_name', 'students.reference as student_ref');
         }
         
         $items = $query->latest('books.created_at')->paginate(20); 
@@ -25,9 +26,10 @@ class BookController extends Controller {
         $query = Book::query();
         
         // Join with students table to get student names
+        // Note: student_reference now stores student ID
         if (Schema::hasColumn('books', 'student_reference')) {
-            $query->leftJoin('students', 'books.student_reference', '=', 'students.reference')
-                  ->select('books.*', 'students.first_name', 'students.last_name');
+            $query->leftJoin('students', 'books.student_reference', '=', 'students.id')
+                  ->select('books.*', 'students.first_name', 'students.last_name', 'students.reference as student_ref');
         }
         
         // Search by reference, subject, or title
@@ -100,17 +102,23 @@ class BookController extends Controller {
         if (!empty($students) && $hasStudentReferenceColumn) {
             // Create a book record for each selected student
             $bookCount = 0;
-            foreach ($students as $studentReference) {
-                $bookData = [
-                    'reference' => 'BK-' . strtoupper(\Illuminate\Support\Str::random(6)),
-                    'subject' => $data['subject'],
-                    'title' => $data['title'],
-                    'price' => $data['price'],
-                    'student_reference' => $studentReference
-                ];
+            foreach ($students as $uniqueIdentifier) {
+                // Parse unique identifier: studentId|reference|firstName_lastName
+                $parts = explode('|', $uniqueIdentifier);
+                $studentId = $parts[0] ?? null;
                 
-                Book::create($bookData);
-                $bookCount++;
+                if ($studentId) {
+                    $bookData = [
+                        'reference' => 'BK-' . strtoupper(\Illuminate\Support\Str::random(6)),
+                        'subject' => $data['subject'],
+                        'title' => $data['title'],
+                        'price' => $data['price'],
+                        'student_reference' => $studentId  // Store student ID
+                    ];
+                    
+                    Book::create($bookData);
+                    $bookCount++;
+                }
             }
             
             return redirect()->route('books.index')->with('ok', "Book added for {$bookCount} student(s)");
