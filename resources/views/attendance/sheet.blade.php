@@ -30,6 +30,7 @@
     @endif
   </select>
   <input name="subject" placeholder="Subject/Theme" value="{{ $subject }}" class="border p-2">
+  <input name="teacher" placeholder="Teacher Name" value="{{ request('teacher') }}" class="border p-2">
   <button class="px-3 py-2 bg-gray-200 rounded">Load</button>
 </form>
 @if(request('reference') && $students->count() > 0)
@@ -37,14 +38,16 @@
     <input type="hidden" name="date" value="{{ $date }}">
     <input type="hidden" name="subject" value="{{ $subject }}">
     <input type="hidden" name="time" value="{{ request('time') }}">
+    <input type="hidden" name="teacher" value="{{ request('teacher') }}">
     <table class="w-full">
-      <tr class="bg-gray-50 border-b"><th class="p-2 text-left">Student</th><th class="p-2 text-center">Present</th><th class="p-2 text-center">Absent</th></tr>
+      <tr class="bg-gray-50 border-b"><th class="p-2 text-left">Student</th><th class="p-2 text-center">Present</th><th class="p-2 text-center">Absent</th><th class="p-2 text-center">Clear</th></tr>
       @foreach($students as $s)
         @php $sel = optional(\App\Models\StudentAttendance::where(['student_id'=>$s->id,'date'=>$date,'subject'=>$subject,'time'=>request('time')])->first())->status; @endphp
         <tr class="border-b">
           <td class="p-2">{{ $s->first_name }} {{ $s->last_name }} ({{ $s->reference }})</td>
           <td class="p-2 text-center"><input type="radio" name="statuses[{{ $s->id }}]" value="present" {{ $sel=='present'?'checked':'' }}></td>
           <td class="p-2 text-center"><input type="radio" name="statuses[{{ $s->id }}]" value="absent"  {{ $sel=='absent'?'checked':'' }}></td>
+          <td class="p-2 text-center"><input type="radio" name="statuses[{{ $s->id }}]" value="" {{ empty($sel)?'checked':'' }}></td>
         </tr>
       @endforeach
     </table>

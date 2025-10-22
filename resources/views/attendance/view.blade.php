@@ -4,22 +4,57 @@
 
 @include('partials.flash')
 <h1 class="text-xl font-semibold mb-4">View Attendance</h1>
-<form class="grid md:grid-cols-5 gap-3 mb-4">
-  <input type="date" name="from" value="{{ $from }}" class="border p-2" placeholder="From">
-  <input type="date" name="to" value="{{ $to }}" class="border p-2" placeholder="To">
-  <input name="reference" value="{{ $reference }}" class="border p-2" placeholder="Reference">
-  <select name="student_id" class="border p-2">
-    <option value="">Any student</option>
-    @foreach($students as $s)
-      <option value="{{ $s->id }}" @selected($studentId==$s->id)>{{ $s->first_name }} {{ $s->last_name }} ({{ $s->reference }})</option>
-    @endforeach
-  </select>
-  <input name="teacher" value="{{ $teacher }}" class="border p-2" placeholder="Teacher (optional)">
-  <button class="bg-gray-200 rounded px-3 py-2">Filter</button>
+
+<form method="GET">
+  <!-- Row 1: Main Filter Inputs -->
+  <div class="grid grid-cols-4 gap-3 mb-3">
+    <input type="date" name="from" value="{{ $from }}" class="border p-2" placeholder="dd/mm/yyyy">
+    <input type="date" name="to" value="{{ $to }}" class="border p-2" placeholder="dd/mm/yyyy">
+    <input name="reference" value="{{ $reference }}" class="border p-2" placeholder="Reference">
+    <input name="teacher" value="{{ $teacher }}" class="border p-2" placeholder="Teacher (optional)">
+  </div>
+  
+  <!-- Row 2: Action Buttons & Statistics -->
+  <div class="flex gap-3 mb-4 items-center flex-wrap">
+    <!-- Filter Button -->
+    <button type="submit" class="bg-gray-200 rounded px-4 py-2 hover:bg-gray-300">Filter</button>
+    
+    <!-- Time Slot Selector -->
+    <div class="border rounded p-2 flex items-center gap-2 bg-white min-w-[200px]">
+      <span class="text-lg">⏰</span>
+      <select name="stats_time" id="stats-time" class="border-0 outline-none text-sm bg-transparent flex-1" onchange="this.form.submit()">
+        <option value="">All Time Slots</option>
+        @foreach($timeSlots as $slot)
+          <option value="{{ $slot }}" {{ $statsTime == $slot ? 'selected' : '' }}>{{ $slot }}</option>
+        @endforeach
+      </select>
+    </div>
+    
+    <!-- Present Count Text -->
+    <span class="text-gray-700 text-sm whitespace-nowrap">
+      Number of students: <strong>{{ $presentCount }}</strong>
+    </span>
+    
+    <!-- Date Selector -->
+    <div class="border rounded p-2 flex items-center gap-2 bg-white min-w-[160px]">
+      <span class="text-lg">📅</span>
+      <select name="stats_date" id="stats-date" class="border-0 outline-none text-sm bg-transparent flex-1" onchange="this.form.submit()">
+        <option value="">Select Date</option>
+        @foreach($availableDates as $date)
+          <option value="{{ $date }}" {{ $statsDate == $date ? 'selected' : '' }}>
+            {{ \Carbon\Carbon::parse($date)->format('d/m/Y') }}
+          </option>
+        @endforeach
+      </select>
+    </div>
+    
+    <!-- Reset Button -->
+    <a href="{{ route('attendance.view') }}" class="bg-gray-200 rounded px-4 py-2 hover:bg-gray-300">Reset</a>
+  </div>
 </form>
 <table class="w-full">
 <tr class="bg-gray-50 border-b"><th class="p-2 text-left">Date</th><th>Student</th><th>Time slot</th><th>Subject/Teacher</th><th>Status</th><th class="text-center">Actions</th></tr>
-@foreach($rows as $r)
+@forelse($rows as $r)
 <tr class="border-b">
   <td class="p-2">{{ \Carbon\Carbon::parse($r->date)->format('d/m/Y') }}</td>
   <td>{{ $r->student ? $r->student->first_name . ' ' . $r->student->last_name : '' }} ({{ $r->student?->reference }})</td>
@@ -36,6 +71,68 @@
     </form>
   </td>
 </tr>
-@endforeach
+@empty
+<tr>
+  <td colspan="6" class="p-4 text-center text-gray-500">No records found</td>
+</tr>
+@endforelse
 </table>
+
+<script>
+// Dynamic time slot update based on selected date (same logic as attendance sheet)
+document.getElementById('stats-date').addEventListener('change', function() {
+    const selectedDate = new Date(this.value);
+    const dayOfWeek = selectedDate.getDay(); // 0=Sunday, 1=Monday, ..., 5=Friday, 6=Saturday
+    const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+    const isFriday = (dayOfWeek === 5);
+    
+    const timeSelect = document.getElementById('stats-time');
+    const currentValue = timeSelect.value;
+    
+    // Define time slot options
+    const weekendTimes = [
+        '9:00 AM — 11:00 AM',
+        '11:15 AM — 1:15 PM',
+        '2:15 PM — 4:15 PM',
+        '4:30 PM — 6:30 PM'
+    ];
+    
+    const fridayTimes = [
+        '9:00 AM — 11:00 AM',
+        '11:15 AM — 1:15 PM',
+        '4:45 PM — 6:45 PM',
+        '7:00 PM — 9:00 PM'
+    ];
+    
+    const weekdayTimes = [
+        '12:00 PM — 2:00 PM',
+        '2:15 PM — 4:15 PM',
+        '4:45 PM — 6:45 PM',
+        '7:00 PM — 9:00 PM'
+    ];
+    
+    // Build new options HTML
+    let optionsHtml = '<option value="">All Time Slots</option>';
+    let timesToUse;
+    
+    if (isWeekend) {
+        timesToUse = weekendTimes;
+    } else if (isFriday) {
+        timesToUse = fridayTimes;
+    } else {
+        timesToUse = weekdayTimes;
+    }
+    
+    timesToUse.forEach(time => {
+        optionsHtml += `<option value="${time}">${time}</option>`;
+    });
+    
+    // Update the select element
+    timeSelect.innerHTML = optionsHtml;
+    
+    // Auto-submit form to get updated count
+    this.form.submit();
+});
+</script>
+
 @endsection
