@@ -4,7 +4,7 @@
 
 @include('partials.flash')
 <h1 class="text-xl font-semibold mb-4">Attendance</h1>
-<form class="flex gap-3 mb-4">
+<form class="flex flex-wrap gap-3 mb-4">
   <input type="date" name="date" id="attendance-date" value="{{ $date }}" class="border p-2">
   <input name="reference" placeholder="Reference" value="{{ $reference }}" class="border p-2">
   <select name="time" id="time-select" class="border p-2">
@@ -39,18 +39,20 @@
     <input type="hidden" name="subject" value="{{ $subject }}">
     <input type="hidden" name="time" value="{{ request('time') }}">
     <input type="hidden" name="teacher" value="{{ request('teacher') }}">
-    <table class="w-full">
-      <tr class="bg-gray-50 border-b"><th class="p-2 text-left">Student</th><th class="p-2 text-center">Present</th><th class="p-2 text-center">Absent</th><th class="p-2 text-center">Clear</th></tr>
-      @foreach($students as $s)
-        @php $sel = optional(\App\Models\StudentAttendance::where(['student_id'=>$s->id,'date'=>$date,'subject'=>$subject,'time'=>request('time')])->first())->status; @endphp
-        <tr class="border-b">
-          <td class="p-2">{{ $s->first_name }} {{ $s->last_name }} ({{ $s->reference }})</td>
-          <td class="p-2 text-center"><input type="radio" name="statuses[{{ $s->id }}]" value="present" {{ $sel=='present'?'checked':'' }}></td>
-          <td class="p-2 text-center"><input type="radio" name="statuses[{{ $s->id }}]" value="absent"  {{ $sel=='absent'?'checked':'' }}></td>
-          <td class="p-2 text-center"><input type="radio" name="statuses[{{ $s->id }}]" value="" {{ empty($sel)?'checked':'' }}></td>
-        </tr>
-      @endforeach
-    </table>
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[640px]">
+        <tr class="bg-gray-50 border-b"><th class="p-2 text-left">Student</th><th class="p-2 text-center">Present</th><th class="p-2 text-center">Absent</th><th class="p-2 text-center">Clear</th></tr>
+        @foreach($students as $s)
+          @php $sel = optional(\App\Models\StudentAttendance::where(['student_id'=>$s->id,'date'=>$date,'subject'=>$subject,'time'=>request('time')])->first())->status; @endphp
+          <tr class="border-b">
+            <td class="p-2">{{ $s->first_name }} {{ $s->last_name }} ({{ $s->reference }})</td>
+            <td class="p-2 text-center"><input type="radio" name="statuses[{{ $s->id }}]" value="present" {{ $sel=='present'?'checked':'' }}></td>
+            <td class="p-2 text-center"><input type="radio" name="statuses[{{ $s->id }}]" value="absent"  {{ $sel=='absent'?'checked':'' }}></td>
+            <td class="p-2 text-center"><input type="radio" name="statuses[{{ $s->id }}]" value="" {{ empty($sel)?'checked':'' }}></td>
+          </tr>
+        @endforeach
+      </table>
+    </div>
     <button class="mt-4 bg-blue-600 text-white px-4 py-2 rounded">Save</button>
   </form>
 @elseif(request('reference'))

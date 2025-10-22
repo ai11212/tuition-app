@@ -7,7 +7,7 @@
 
 <form method="GET">
   <!-- Row 1: Main Filter Inputs -->
-  <div class="grid grid-cols-4 gap-3 mb-3">
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-3">
     <input type="date" name="from" value="{{ $from }}" class="border p-2" placeholder="dd/mm/yyyy">
     <input type="date" name="to" value="{{ $to }}" class="border p-2" placeholder="dd/mm/yyyy">
     <input name="reference" value="{{ $reference }}" class="border p-2" placeholder="Reference">
@@ -20,7 +20,7 @@
     <button type="submit" class="bg-gray-200 rounded px-4 py-2 hover:bg-gray-300">Filter</button>
     
     <!-- Time Slot Selector -->
-    <div class="border rounded p-2 flex items-center gap-2 bg-white min-w-[200px]">
+    <div class="border rounded p-2 flex items-center gap-2 bg-white min-w-[180px] sm:min-w-[200px]">
       <span class="text-lg">⏰</span>
       <select name="stats_time" id="stats-time" class="border-0 outline-none text-sm bg-transparent flex-1" onchange="this.form.submit()">
         <option value="">All Time Slots</option>
@@ -36,7 +36,7 @@
     </span>
     
     <!-- Date Selector -->
-    <div class="border rounded p-2 flex items-center gap-2 bg-white min-w-[160px]">
+    <div class="border rounded p-2 flex items-center gap-2 bg-white min-w-[150px] sm:min-w-[160px]">
       <span class="text-lg">📅</span>
       <select name="stats_date" id="stats-date" class="border-0 outline-none text-sm bg-transparent flex-1" onchange="this.form.submit()">
         <option value="">Select Date</option>
@@ -52,9 +52,10 @@
     <a href="{{ route('attendance.view') }}" class="bg-gray-200 rounded px-4 py-2 hover:bg-gray-300">Reset</a>
   </div>
 </form>
-<table class="w-full">
-<tr class="bg-gray-50 border-b"><th class="p-2 text-left">Date</th><th>Student</th><th>Time slot</th><th>Subject/Teacher</th><th>Status</th><th class="text-center">Actions</th></tr>
-@forelse($rows as $r)
+<div class="overflow-x-auto">
+  <table class="w-full min-w-[800px]">
+  <tr class="bg-gray-50 border-b"><th class="p-2 text-left">Date</th><th>Student</th><th>Time slot</th><th>Subject/Teacher</th><th>Status</th><th class="text-center">Actions</th></tr>
+  @forelse($rows as $r)
 <tr class="border-b">
   <td class="p-2">{{ \Carbon\Carbon::parse($r->date)->format('d/m/Y') }}</td>
   <td>{{ $r->student ? $r->student->first_name . ' ' . $r->student->last_name : '' }} ({{ $r->student?->reference }})</td>
@@ -76,7 +77,8 @@
   <td colspan="6" class="p-4 text-center text-gray-500">No records found</td>
 </tr>
 @endforelse
-</table>
+  </table>
+</div>
 
 <script>
 // Dynamic time slot update based on selected date (same logic as attendance sheet)
