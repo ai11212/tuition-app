@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ config('app.name','Tuition App') }}</title>
+  <title>{{ config('app.name','Alperton Academy') }}</title>
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -75,7 +75,7 @@
       </button>
       <a href="/" class="font-bold text-xl text-gray-800 flex items-center gap-2">
         <span class="text-2xl">🎓</span>
-        <span class="hidden sm:inline">{{ config('app.name','Tuition App') }}</span>
+        <span class="hidden sm:inline">{{ config('app.name','Alperton Academy') }}</span>
       </a>
       <nav class="ml-8 hidden md:flex gap-1 text-sm flex-1" x-data="{ studentsOpen: false, financeOpen: false, libraryOpen: false }" @click.away="studentsOpen=false; financeOpen=false; libraryOpen=false">
         <a href="/" class="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition {{ request()->is('/') ? 'bg-gray-100 text-gray-900 font-semibold' : '' }}">

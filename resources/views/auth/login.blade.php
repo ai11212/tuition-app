@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sign in • Tuition App</title>
+  <title>Sign in • Alperton Academy</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50">
@@ -10,7 +10,7 @@
     <div class="w-full max-w-md">
       <div class="bg-white/80 backdrop-blur rounded-2xl shadow-xl border p-6">
         <h1 class="text-2xl font-bold mb-1 text-center">Welcome back</h1>
-        <p class="text-sm text-center text-gray-600 mb-6">Sign in to continue to <b>Tuition App</b></p>
+        <p class="text-sm text-center text-gray-600 mb-6">Sign in to continue to <b>Alperton Academy</b></p>
         <form method="POST" action="/login" class="space-y-4">@csrf
           <div>
             <label class="text-sm text-gray-700">Email</label>
