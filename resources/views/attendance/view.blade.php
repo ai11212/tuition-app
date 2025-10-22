@@ -60,11 +60,12 @@
 </form>
 <div class="overflow-x-auto">
   <table class="w-full min-w-[900px]">
-  <tr class="bg-gray-50 border-b"><th class="p-2 text-left">Date</th><th>Student</th><th>Time slot</th><th>Subject</th><th>Teacher</th><th>Status</th><th class="text-center">Actions</th></tr>
+  <tr class="bg-gray-50 border-b"><th class="p-2 text-left">Date</th><th>Student Name</th><th>Reference</th><th>Time slot</th><th>Subject</th><th>Teacher</th><th>Status</th><th class="text-center">Actions</th></tr>
   @forelse($rows as $r)
 <tr class="border-b">
   <td class="p-2">{{ \Carbon\Carbon::parse($r->date)->format('d/m/Y') }}</td>
-  <td>{{ $r->student ? $r->student->first_name . ' ' . $r->student->last_name : '' }} ({{ $r->student?->reference }})</td>
+  <td>{{ $r->student ? $r->student->first_name . ' ' . $r->student->last_name : '' }}</td>
+  <td>{{ $r->student?->reference }}</td>
   <td>{{ $r->time ?? '-' }}</td>
   <td>{{ $r->subject ?? '-' }}</td>
   <td>{{ $r->teacher ?? '-' }}</td>
@@ -81,7 +82,7 @@
 </tr>
 @empty
 <tr>
-  <td colspan="7" class="p-4 text-center text-gray-500">No records found</td>
+  <td colspan="8" class="p-4 text-center text-gray-500">No records found</td>
 </tr>
 @endforelse
   </table>
