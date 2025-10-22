@@ -8,8 +8,14 @@
 <form method="GET">
   <!-- Row 1: Main Filter Inputs -->
   <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-    <input type="date" name="from" value="{{ $from }}" class="border p-2" placeholder="dd/mm/yyyy">
-    <input type="date" name="to" value="{{ $to }}" class="border p-2" placeholder="dd/mm/yyyy">
+    <div>
+      <label class="block text-xs text-gray-600 mb-1">From Date</label>
+      <input type="date" name="from" value="{{ $from }}" class="border p-2 w-full">
+    </div>
+    <div>
+      <label class="block text-xs text-gray-600 mb-1">To Date</label>
+      <input type="date" name="to" value="{{ $to }}" class="border p-2 w-full">
+    </div>
     <input name="reference" value="{{ $reference }}" class="border p-2" placeholder="Reference">
     <input name="teacher" value="{{ $teacher }}" class="border p-2" placeholder="Teacher (optional)">
   </div>
