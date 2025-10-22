@@ -134,8 +134,11 @@ class StudentController extends Controller
         // Ensure reference exists (DB says NOT NULL in your logs)
         $reference = $admission['reference'] ?? null;
         if (!$reference) {
-            // simple auto-ref; if your project had a custom generator, replace here
-            $reference = 'A' . date('ymdHis');
+            // Auto-generate reference starting from A1001
+            $lastStudent = \App\Models\Student::orderBy('id', 'desc')->first();
+            $nextNumber = $lastStudent ? ($lastStudent->id + 1) : 1;
+            $nextNumber = max($nextNumber, 1001); // Start from 1001 minimum
+            $reference = 'A' . $nextNumber;
         }
 
         // Common guardian data copied to each student row (post_code is guardian’s)
