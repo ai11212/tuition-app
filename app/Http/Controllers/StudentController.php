@@ -135,9 +135,16 @@ class StudentController extends Controller
         $reference = $admission['reference'] ?? null;
         if (!$reference) {
             // Auto-generate reference starting from A1001
-            $lastStudent = \App\Models\Student::orderBy('id', 'desc')->first();
-            $nextNumber = $lastStudent ? ($lastStudent->id + 1) : 1;
-            $nextNumber = max($nextNumber, 1001); // Start from 1001 minimum
+            // Find the last reference matching pattern A#### and increment
+            $lastReference = \App\Models\Student::where('reference', 'REGEXP', '^A[0-9]+$')
+                ->orderByRaw('CAST(SUBSTRING(reference, 2) AS UNSIGNED) DESC')
+                ->value('reference');
+            
+            if ($lastReference && preg_match('/^A(\d+)$/', $lastReference, $matches)) {
+                $nextNumber = intval($matches[1]) + 1;
+            } else {
+                $nextNumber = 1001; // Start from 1001 if no numeric references found
+            }
             $reference = 'A' . $nextNumber;
         }
 
