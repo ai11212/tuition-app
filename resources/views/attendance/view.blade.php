@@ -59,14 +59,15 @@
   </div>
 </form>
 <div class="overflow-x-auto">
-  <table class="w-full min-w-[800px]">
-  <tr class="bg-gray-50 border-b"><th class="p-2 text-left">Date</th><th>Student</th><th>Time slot</th><th>Subject/Teacher</th><th>Status</th><th class="text-center">Actions</th></tr>
+  <table class="w-full min-w-[900px]">
+  <tr class="bg-gray-50 border-b"><th class="p-2 text-left">Date</th><th>Student</th><th>Time slot</th><th>Subject</th><th>Teacher</th><th>Status</th><th class="text-center">Actions</th></tr>
   @forelse($rows as $r)
 <tr class="border-b">
   <td class="p-2">{{ \Carbon\Carbon::parse($r->date)->format('d/m/Y') }}</td>
   <td>{{ $r->student ? $r->student->first_name . ' ' . $r->student->last_name : '' }} ({{ $r->student?->reference }})</td>
   <td>{{ $r->time ?? '-' }}</td>
-  <td>{{ $r->subject ?? '-' }} {{ $r->teacher ? '(' . $r->teacher . ')' : '' }}</td>
+  <td>{{ $r->subject ?? '-' }}</td>
+  <td>{{ $r->teacher ?? '-' }}</td>
   <td class="{{ $r->status=='present'?'text-green-700':'text-red-700' }}">{{ ucfirst($r->status) }}</td>
   <td class="text-center">
     <form method="POST" action="{{ route('attendance.destroy', $r->id) }}" onsubmit="return confirm('Are you sure you want to delete this attendance record?');" style="display:inline;">
@@ -80,7 +81,7 @@
 </tr>
 @empty
 <tr>
-  <td colspan="6" class="p-4 text-center text-gray-500">No records found</td>
+  <td colspan="7" class="p-4 text-center text-gray-500">No records found</td>
 </tr>
 @endforelse
   </table>

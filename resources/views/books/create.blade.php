@@ -97,15 +97,10 @@
                     <div class="p-3 bg-light border-bottom">
                         <form method="GET" action="{{ route('books.create') }}" id="search-form">
                             <div class="row g-2">
-                                <div class="col-md-6">
-                                    <input type="text" name="search" class="form-control" 
-                                           placeholder="Search by reference, subject, or title..." 
-                                           value="{{ request('search') }}">
-                                </div>
                                 @if(Schema::hasColumn('books', 'student_reference'))
-                                <div class="col-md-4">
+                                <div class="col-md-10">
                                     <input type="text" name="student_ref" class="form-control" 
-                                           placeholder="Filter by student ref..." 
+                                           placeholder="Search by reference" 
                                            value="{{ request('student_ref') }}">
                                 </div>
                                 @endif
@@ -115,7 +110,7 @@
                                     </button>
                                 </div>
                             </div>
-                            @if(request('search') || request('student_ref'))
+                            @if(request('student_ref'))
                                 <div class="mt-2">
                                     <a href="{{ route('books.create') }}" class="btn btn-sm btn-outline-secondary">
                                         <i class="bi bi-x-circle"></i> Clear Filters

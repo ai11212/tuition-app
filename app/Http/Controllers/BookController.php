@@ -46,7 +46,7 @@ class BookController extends Controller {
         if ($request->filled('student_ref') && Schema::hasColumn('books', 'student_reference')) {
             $studentRef = $request->student_ref;
             $query->where(function($q) use ($studentRef) {
-                $q->where('books.student_reference', 'like', "%{$studentRef}%")
+                $q->where('students.reference', 'like', "%{$studentRef}%")
                   ->orWhereNull('books.student_reference');
             });
         }
