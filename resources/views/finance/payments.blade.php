@@ -71,7 +71,19 @@
         </div>
         <div>
           <span class="text-blue-700 font-medium">Payment:</span><br>
-          <span class="text-lg font-semibold text-green-700">£{{ number_format($studentDetails['payment'], 2) }}</span>
+          <form method="POST" action="{{ route('student.updatePayment', $studentDetails['student']->id) }}" class="inline-flex items-center gap-2">
+            @csrf
+            @method('PATCH')
+            <span class="text-lg font-semibold text-green-700">£</span>
+            <input type="number" name="payment" value="{{ $studentDetails['payment'] }}" 
+                   step="0.01" min="0" 
+                   class="w-24 px-2 py-1 border border-blue-300 rounded text-lg font-semibold text-green-700"
+                   required>
+            <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                    onclick="return confirm('Update payment amount to £' + this.form.payment.value + '?')">
+              Save
+            </button>
+          </form>
         </div>
       </div>
       <div class="grid md:grid-cols-3 gap-4 mt-4 text-sm">

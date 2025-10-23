@@ -40,16 +40,11 @@ class AttendanceController extends Controller {
                 continue;
             }
             
-            // Check if attendance already exists for this student on this date+time (can't be in two places)
+            // Check if attendance already exists for this student on this date+time
+            // (Student cannot be in two places at the same time)
             $existingTime = StudentAttendance::where('student_id', $studentId)
                 ->where('date', $data['date'])
                 ->where('time', $time)
-                ->first();
-            
-            // Check if attendance already exists for this student on this date+subject (database constraint)
-            $existingSubject = StudentAttendance::where('student_id', $studentId)
-                ->where('date', $data['date'])
-                ->where('subject', $data['subject'])
                 ->first();
             
             $student = \App\Models\Student::find($studentId);
@@ -58,12 +53,6 @@ class AttendanceController extends Controller {
             if ($existingTime) {
                 // Student already has attendance for this time slot
                 $duplicates[] = $studentName . ' (already logged at ' . $time . ')';
-                continue;
-            }
-            
-            if ($existingSubject) {
-                // Student already has attendance for this subject today
-                $duplicates[] = $studentName . ' (already logged for ' . $data['subject'] . ' today)';
                 continue;
             }
             

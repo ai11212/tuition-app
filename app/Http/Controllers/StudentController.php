@@ -685,4 +685,23 @@ class StudentController extends Controller
 
         return $timeMap[$dayString][$startTime] ?? null;
     }
+
+    /**
+     * Update student payment amount only (for fee adjustments)
+     */
+    public function updatePayment(Request $request, $id)
+    {
+        $data = $request->validate([
+            'payment' => 'required|numeric|min:0|max:99999.99',
+        ]);
+        
+        $student = Student::findOrFail($id);
+        $oldPayment = $student->payment;
+        
+        $student->update(['payment' => $data['payment']]);
+        
+        return redirect()->back()->with('success', 
+            'Payment amount updated from £' . number_format($oldPayment, 2) . 
+            ' to £' . number_format($data['payment'], 2));
+    }
 }

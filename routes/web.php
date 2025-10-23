@@ -22,6 +22,7 @@ Route::middleware('auth')->group(function(){
     // Students list and management
     Route::get('/students',         [StudentController::class,'index'])->name('students.index');
     Route::get('/students/{reference}/edit', [StudentController::class,'edit'])->name('students.edit');
+    Route::patch('/students/{id}/update-payment', [StudentController::class,'updatePayment'])->name('student.updatePayment');
     Route::post('/students/{reference}/next-edit', [StudentController::class,'nextEdit'])->name('students.next.edit');
     Route::put('/students/{reference}',      [StudentController::class,'update'])->name('students.update');
     Route::delete('/students/{reference}',   [StudentController::class,'destroy'])->name('students.destroy');
