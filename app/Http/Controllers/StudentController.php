@@ -172,6 +172,7 @@ class StudentController extends Controller
             'deposit'     => $admission['deposit'] ?? null,
             'deposit_paid' => $admission['deposit_paid'] ?? 0,
             'payment'     => $admission['payment'] ?? null,
+            'payment_plan' => $admission['payment'] ?? null, // Store original payment plan (read-only)
             'period'      => $admission['period'] ?? null,
         ] + $guardian;
 

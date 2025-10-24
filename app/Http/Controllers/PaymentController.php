@@ -211,6 +211,7 @@ class PaymentController extends Controller
                     'deposit' => $exactStudent->deposit ?? 0,
                     'deposit_paid' => $exactStudent->deposit_paid ?? false,
                     'payment' => $exactStudent->payment ?? 0,
+                    'payment_plan' => $exactStudent->payment_plan ?? null,
                     'expected_total' => $expectedTotal,
                     'payment_pending' => $paymentPending,
                     'show_books' => $showBooks,

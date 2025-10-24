@@ -70,6 +70,12 @@
           </span>
         </div>
         <div>
+          @if(isset($studentDetails['payment_plan']) && $studentDetails['payment_plan'] > 0)
+          <span class="text-blue-700 font-medium">Student Plan:</span><br>
+          <span class="text-lg font-semibold text-gray-700">£{{ number_format($studentDetails['payment_plan'], 2) }}</span>
+          <span class="text-xs text-gray-500">(Original)</span>
+          <br><br>
+          @endif
           <span class="text-blue-700 font-medium">Payment:</span><br>
           <form method="POST" action="{{ route('student.updatePayment', $studentDetails['student']->id) }}" class="inline-flex items-center gap-2">
             @csrf
