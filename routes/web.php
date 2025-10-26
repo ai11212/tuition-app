@@ -23,6 +23,8 @@ Route::middleware('auth')->group(function(){
     Route::get('/students',         [StudentController::class,'index'])->name('students.index');
     Route::get('/students/{reference}/edit', [StudentController::class,'edit'])->name('students.edit');
     Route::patch('/students/{id}/update-payment', [StudentController::class,'updatePayment'])->name('student.updatePayment');
+    Route::patch('/students/{student}/update-pending-amount', [PaymentController::class,'updatePendingAmount'])->name('student.updatePendingAmount');
+    Route::patch('/students/{student}/add-pending-amount', [PaymentController::class,'addPendingAmount'])->name('student.addPendingAmount');
     Route::post('/students/{reference}/next-edit', [StudentController::class,'nextEdit'])->name('students.next.edit');
     Route::put('/students/{reference}',      [StudentController::class,'update'])->name('students.update');
     Route::delete('/students/{reference}',   [StudentController::class,'destroy'])->name('students.destroy');

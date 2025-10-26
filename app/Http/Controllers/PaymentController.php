@@ -173,8 +173,8 @@ class PaymentController extends Controller
                 $bookPaymentsPending = max(0, $totalBookPrice - $paymentsForBooks);
                 
                 // Calculate total payment pending
-                // Payment Pending = (Student Payment + Total Book Price) - Total Paid
-                $expectedTotal = ($exactStudent->payment ?? 0) + $totalBookPrice;
+                // Payment Pending = (Pending Amount OR Student Payment + Total Book Price) - Total Paid
+                $expectedTotal = ($exactStudent->pending_amount ?? $exactStudent->payment ?? 0) + $totalBookPrice;
                 $paymentPending = max(0, $expectedTotal - $totalPaid);
                 
                 // Smart Detection: Filter books to show only UNPAID books
@@ -212,6 +212,7 @@ class PaymentController extends Controller
                     'deposit_paid' => $exactStudent->deposit_paid ?? false,
                     'payment' => $exactStudent->payment ?? 0,
                     'payment_plan' => $exactStudent->payment_plan ?? null,
+                    'pending_amount' => $exactStudent->pending_amount ?? null,
                     'expected_total' => $expectedTotal,
                     'payment_pending' => $paymentPending,
                     'show_books' => $showBooks,
@@ -529,5 +530,41 @@ class PaymentController extends Controller
             return redirect()->route('payments', request()->only('ref','from','to'))
                              ->with('error', 'Failed to delete payment: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Update pending amount for a student
+     */
+    public function updatePendingAmount(Request $request, Student $student)
+    {
+        $request->validate([
+            'pending_amount' => 'required|numeric|min:0'
+        ]);
+
+        $student->update([
+            'pending_amount' => $request->pending_amount
+        ]);
+
+        return redirect()->back()->with('success', 'Pending amount updated successfully.');
+    }
+
+    /**
+     * Add amount to existing pending amount (incremental)
+     */
+    public function addPendingAmount(Request $request, Student $student)
+    {
+        $request->validate([
+            'amount_to_add' => 'required|numeric|min:0'
+        ]);
+
+        $currentPending = $student->pending_amount ?? $student->payment ?? 0;
+        $amountToAdd = $request->amount_to_add;
+        $newPending = $currentPending + $amountToAdd;
+
+        $student->update([
+            'pending_amount' => $newPending
+        ]);
+
+        return redirect()->back()->with('success', "Added £" . number_format($amountToAdd, 2) . ". New pending: £" . number_format($newPending, 2));
     }
 }

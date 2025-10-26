@@ -12,7 +12,7 @@ class Student extends Model
         'guardian_name','guardian_relation','guardian_phone','guardian_email','guardian_address',
         'guardian_city',
         'post_code',
-        'city', 'enroll_date', 'start_date', 'deposit', 'deposit_paid', 'payment', 'payment_plan', 'period',
+        'city', 'enroll_date', 'start_date', 'deposit', 'deposit_paid', 'payment', 'payment_plan', 'pending_amount', 'period',
     ];
 
     // Safety net: auto-assign reference if controller missed it (should not happen now)

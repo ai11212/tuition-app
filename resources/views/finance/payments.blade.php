@@ -47,8 +47,10 @@
   {{-- Student Information Card (when exact reference match found) --}}
   @if(isset($studentDetails) && $studentDetails)
     <div class="p-4 rounded-xl border-2 border-blue-200 bg-blue-50 mb-6">
-      <h2 class="font-semibold text-blue-900 mb-3">Student Information</h2>
-      <div class="grid md:grid-cols-4 gap-4 text-sm">
+      <h2 class="font-semibold text-blue-900 mb-4">Student Information</h2>
+      
+      {{-- Top Row: Basic Info in 4 columns --}}
+      <div class="grid md:grid-cols-4 gap-4 mb-4 pb-4 border-b border-blue-200 text-sm">
         <div>
           <span class="text-blue-700 font-medium">Reference:</span><br>
           <span class="text-lg font-semibold">{{ $studentDetails['student']->reference }}</span>
@@ -74,25 +76,34 @@
           <span class="text-blue-700 font-medium">Student Plan:</span><br>
           <span class="text-lg font-semibold text-gray-700">£{{ number_format($studentDetails['payment_plan'], 2) }}</span>
           <span class="text-xs text-gray-500">(Original)</span>
-          <br><br>
           @endif
-          <span class="text-blue-700 font-medium">Payment:</span><br>
-          <form method="POST" action="{{ route('student.updatePayment', $studentDetails['student']->id) }}" class="inline-flex items-center gap-2">
-            @csrf
-            @method('PATCH')
-            <span class="text-lg font-semibold text-green-700">£</span>
-            <input type="number" name="payment" value="{{ $studentDetails['payment'] }}" 
-                   step="0.01" min="0" 
-                   class="w-24 px-2 py-1 border border-blue-300 rounded text-lg font-semibold text-green-700"
-                   required>
-            <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
-                    onclick="return confirm('Update payment amount to £' + this.form.payment.value + '?')">
-              Save
-            </button>
-          </form>
         </div>
       </div>
-      <div class="grid md:grid-cols-3 gap-4 mt-4 text-sm">
+
+      {{-- Middle Row: Add Pending Amount (Single Column) --}}
+      <div class="mb-4 pb-4 border-b border-blue-200">
+        <div class="max-w-lg">
+          <span class="text-blue-700 font-medium text-base">Add Pending Amount:</span><br>
+          <form method="POST" action="{{ route('student.addPendingAmount', $studentDetails['student']->id) }}" class="inline-flex items-center gap-2 mt-2">
+            @csrf
+            @method('PATCH')
+            <span class="text-xl font-bold text-orange-600">£</span>
+            <input type="number" name="amount_to_add" value="200.00" 
+                   step="0.01" min="0" 
+                   class="w-32 px-3 py-2 border-2 border-orange-300 rounded-lg text-xl font-bold text-orange-600 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
+                   required>
+            <button type="submit" class="px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition-colors">
+              ➕ Add
+            </button>
+          </form>
+          <div class="text-xs text-gray-600 mt-2 italic">
+            💡 Enter amount to add to pending (e.g., weekly £200 fee)
+          </div>
+        </div>
+      </div>
+
+      {{-- Bottom Row: Payment Summary in 3 columns --}}
+      <div class="grid md:grid-cols-3 gap-4 text-sm">
         <div>
           <span class="text-blue-700 font-medium">Total Payments Made:</span><br>
           <span class="text-lg font-semibold text-green-700">£{{ number_format($studentDetails['total_paid'], 2) }}</span>

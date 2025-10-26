@@ -227,7 +227,8 @@
             $totalBookPrice = $assignedBooks->sum('price') + $subjectBooks->sum('price');
             
             // Calculate balance (Expected - Paid) - This matches "Payment Pending" on payment page
-            $expectedTotal = ($student->payment ?? 0) + $totalBookPrice;
+            // Use pending_amount if set, otherwise fall back to payment
+            $expectedTotal = ($student->pending_amount ?? $student->payment ?? 0) + $totalBookPrice;
             $balanceDue = max(0, $expectedTotal - $totalPaid);
             
             // For this invoice
