@@ -25,46 +25,83 @@
     $a = $admission ?? [];
   @endphp
 
+  @php
+    // Handle both new admission and edit mode data structures
+    if ($isEdit && !empty($a['students'])) {
+      // Edit mode: data is in students array
+      $firstStudent = $a['students'][0] ?? [];
+      $guardianData = $firstStudent;
+      $studentData = $firstStudent;
+    } else {
+      // New admission: data is at root level
+      $guardianData = $a;
+      $studentData = $a;
+    }
+  @endphp
+
   <div class="card mb-4">
     <div class="card-header">Guardian</div>
     <div class="card-body">
-      <div><strong>Name:</strong> {{ $a['guardian_name'] ?? '' }}</div>
-      <div><strong>Relation:</strong> {{ $a['guardian_relation'] ?? '' }}</div>
-      <div><strong>Phone:</strong> {{ $a['guardian_phone'] ?? '' }}</div>
-      <div><strong>Email:</strong> {{ $a['guardian_email'] ?? '' }}</div>
-      <div><strong>Address:</strong> {{ $a['guardian_address'] ?? '' }}</div>
-      <div><strong>City:</strong> {{ $a['guardian_city'] ?? '' }}</div>
-      <div><strong>Notes:</strong> {{ $a['guardian_notes'] ?? '' }}</div>
-      <div><strong>Post code:</strong> {{ $a['post_code'] ?? '' }}</div>
-      <div><strong>Reference (optional):</strong> {{ $a['reference'] ?? '— will be auto-generated —' }}</div>
+      <div><strong>Name:</strong> {{ $guardianData['guardian_name'] ?? '' }}</div>
+      <div><strong>Relation:</strong> {{ $guardianData['guardian_relation'] ?? '' }}</div>
+      <div><strong>Phone:</strong> {{ $guardianData['guardian_phone'] ?? '' }}</div>
+      <div><strong>Email:</strong> {{ $guardianData['guardian_email'] ?? '' }}</div>
+      <div><strong>Address:</strong> {{ $guardianData['guardian_address'] ?? '' }}</div>
+      <div><strong>City:</strong> {{ $guardianData['guardian_city'] ?? '' }}</div>
+      <div><strong>Notes:</strong> {{ $guardianData['guardian_notes'] ?? '' }}</div>
+      <div><strong>Post code:</strong> {{ $guardianData['post_code'] ?? '' }}</div>
+      <div><strong>Reference:</strong> {{ $a['reference'] ?? '— will be auto-generated —' }}</div>
     </div>
   </div>
 
-  <div class="card mb-4">
-    <div class="card-header">Student 1</div>
-    <div class="card-body">
-      <div><strong>Name:</strong> {{ ($a['first_name'] ?? '') . ' ' . ($a['last_name'] ?? '') }}</div>
-      <div><strong>Gender:</strong> {{ $a['gender'] ?? '' }}</div>
-      <div><strong>DOB:</strong> {{ $a['dob'] ?? '' }}</div>
-      <div><strong>Enroll date:</strong> {{ $a['enroll_date'] ?? '' }}</div>
-      <div><strong>Start date:</strong> {{ $a['start_date'] ?? '' }}</div>
-      <div><strong>Deposit:</strong> {{ $a['deposit'] ?? '' }}</div>
-      <div><strong>Deposit Paid:</strong> {{ isset($a['deposit_paid']) && $a['deposit_paid'] == '1' ? 'Yes' : 'No' }}</div>
-      <div><strong>Payment:</strong> {{ $a['payment'] ?? '' }}</div>
-    </div>
-  </div>
-
-  @if(!empty($a['siblings']))
-    @foreach($a['siblings'] as $idx => $s)
-      <div class="card mb-3">
-        <div class="card-header">Sibling {{ $idx+2 }}</div>
+  @if($isEdit && !empty($a['students']))
+    {{-- Edit mode: show all students from students array --}}
+    @foreach($a['students'] as $idx => $student)
+      <div class="card mb-4">
+        <div class="card-header">{{ $idx == 0 ? 'Student 1' : 'Sibling ' . ($idx + 1) }}</div>
         <div class="card-body">
-          <div><strong>Name:</strong> {{ ($s['first_name'] ?? '') . ' ' . ($s['last_name'] ?? '') }}</div>
-          <div><strong>Gender:</strong> {{ $s['gender'] ?? '' }}</div>
-          <div><strong>DOB:</strong> {{ $s['dob'] ?? '' }}</div>
+          <div><strong>Name:</strong> {{ ($student['first_name'] ?? '') . ' ' . ($student['last_name'] ?? '') }}</div>
+          <div><strong>Gender:</strong> {{ $student['gender'] ?? '' }}</div>
+          <div><strong>DOB:</strong> {{ $student['dob'] ?? '' }}</div>
+          @if($idx == 0)
+            <div><strong>Enroll date:</strong> {{ $student['enroll_date'] ?? '' }}</div>
+            <div><strong>Start date:</strong> {{ $student['start_date'] ?? '' }}</div>
+            <div><strong>Deposit:</strong> {{ $student['deposit'] ?? '' }}</div>
+            <div><strong>Deposit Paid:</strong> {{ isset($student['deposit_paid']) && $student['deposit_paid'] == '1' ? 'Yes' : 'No' }}</div>
+            <div><strong>Payment:</strong> {{ $student['fee_amount'] ?? $student['payment'] ?? '' }}</div>
+            <div><strong>Period:</strong> {{ $student['period'] ?? '' }}</div>
+          @endif
         </div>
       </div>
     @endforeach
+  @else
+    {{-- New admission mode: old structure --}}
+    <div class="card mb-4">
+      <div class="card-header">Student 1</div>
+      <div class="card-body">
+        <div><strong>Name:</strong> {{ ($a['first_name'] ?? '') . ' ' . ($a['last_name'] ?? '') }}</div>
+        <div><strong>Gender:</strong> {{ $a['gender'] ?? '' }}</div>
+        <div><strong>DOB:</strong> {{ $a['dob'] ?? '' }}</div>
+        <div><strong>Enroll date:</strong> {{ $a['enroll_date'] ?? '' }}</div>
+        <div><strong>Start date:</strong> {{ $a['start_date'] ?? '' }}</div>
+        <div><strong>Deposit:</strong> {{ $a['deposit'] ?? '' }}</div>
+        <div><strong>Deposit Paid:</strong> {{ isset($a['deposit_paid']) && $a['deposit_paid'] == '1' ? 'Yes' : 'No' }}</div>
+        <div><strong>Payment:</strong> {{ $a['payment'] ?? '' }}</div>
+      </div>
+    </div>
+
+    @if(!empty($a['siblings']))
+      @foreach($a['siblings'] as $idx => $s)
+        <div class="card mb-3">
+          <div class="card-header">Sibling {{ $idx+2 }}</div>
+          <div class="card-body">
+            <div><strong>Name:</strong> {{ ($s['first_name'] ?? '') . ' ' . ($s['last_name'] ?? '') }}</div>
+            <div><strong>Gender:</strong> {{ $s['gender'] ?? '' }}</div>
+            <div><strong>DOB:</strong> {{ $s['dob'] ?? '' }}</div>
+          </div>
+        </div>
+      @endforeach
+    @endif
   @endif
 
   <form method="POST" action="{{ $isEdit ? route('students.update', $a['reference']) : route('students.store') }}">
@@ -85,11 +122,19 @@
         ['start'=>'16:45','end'=>'18:45'],
         ['start'=>'19:00','end'=>'21:00'],
       ];
-      // Build students array: primary then siblings
+      // Build students array - handle both new admission and edit mode
       $students = [];
-      $students[] = ['name'=>($a['first_name'] ?? '').' '.($a['last_name'] ?? '')];
-      foreach($a['siblings'] ?? [] as $s) {
-        $students[] = ['name'=>($s['first_name'] ?? '').' '.($s['last_name'] ?? '')];
+      if ($isEdit && !empty($a['students'])) {
+        // Edit mode: use students array
+        foreach ($a['students'] as $s) {
+          $students[] = ['name' => ($s['first_name'] ?? '') . ' ' . ($s['last_name'] ?? '')];
+        }
+      } else {
+        // New admission: use first_name + siblings
+        $students[] = ['name' => ($a['first_name'] ?? '') . ' ' . ($a['last_name'] ?? '')];
+        foreach ($a['siblings'] ?? [] as $s) {
+          $students[] = ['name' => ($s['first_name'] ?? '') . ' ' . ($s['last_name'] ?? '')];
+        }
       }
     @endphp
 
@@ -135,11 +180,21 @@
                       <select name="timetable[{{ $si }}][{{ $d }}][{{ $slot }}]" class="form-select">
                         <option value="">—</option>
                         @foreach($subjects as $sub)
-                          <option value="{{ $sub }}" @if(old('timetable.'.$si.'.'.$d.'.'.$slot)==$sub) selected @endif>{{ $sub }}</option>
+                          @php
+                            // Check if there's existing timetable data (edit mode)
+                            $existingValue = $a['timetable'][$si][$d][$slot] ?? null;
+                            $oldValue = old('timetable.'.$si.'.'.$d.'.'.$slot);
+                            $selectedValue = $oldValue ?? $existingValue;
+                          @endphp
+                          <option value="{{ $sub }}" @if($selectedValue == $sub) selected @endif>{{ $sub }}</option>
                         @endforeach
                       </select>
                       <span class="print-subject d-none" id="print-subject-{{ $si }}-{{ $d }}-{{ $slot }}">
-                        {{ old('timetable.'.$si.'.'.$d.'.'.$slot) ?? '—' }}
+                        @php
+                          $existingValue = $a['timetable'][$si][$d][$slot] ?? null;
+                          $displayValue = old('timetable.'.$si.'.'.$d.'.'.$slot) ?? $existingValue ?? '—';
+                        @endphp
+                        {{ $displayValue }}
                       </span>
                     </td>
                     @endforeach

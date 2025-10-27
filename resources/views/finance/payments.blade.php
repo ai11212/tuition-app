@@ -78,17 +78,33 @@
           <span class="text-xs text-gray-500">(Original)</span>
           @endif
         </div>
+        <div>
+          <span class="text-blue-700 font-medium">Student New Plan:</span><br>
+          <form method="POST" action="{{ route('student.updateNewPlan', $studentDetails['student']->id) }}" class="inline-flex items-center gap-2 mt-1">
+            @csrf
+            @method('PATCH')
+            <span class="text-sm font-bold text-gray-600">£</span>
+            <input type="number" name="new_plan" 
+                   value="{{ old('new_plan', $studentDetails['student']->new_plan ?? '') }}" 
+                   step="0.01" min="0" 
+                   class="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200"
+                   placeholder="0.00">
+            <button type="submit" class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors">
+              Save
+            </button>
+          </form>
+        </div>
       </div>
 
       {{-- Middle Row: Add Pending Amount (Single Column) --}}
       <div class="mb-4 pb-4 border-b border-blue-200">
         <div class="max-w-lg">
-          <span class="text-blue-700 font-medium text-base">Add Pending Amount:</span><br>
+          <span class="text-blue-700 font-medium text-base">Amount:</span><br>
           <form method="POST" action="{{ route('student.addPendingAmount', $studentDetails['student']->id) }}" class="inline-flex items-center gap-2 mt-2">
             @csrf
             @method('PATCH')
             <span class="text-xl font-bold text-orange-600">£</span>
-            <input type="number" name="amount_to_add" value="200.00" 
+            <input type="number" name="amount_to_add" value="0" 
                    step="0.01" min="0" 
                    class="w-32 px-3 py-2 border-2 border-orange-300 rounded-lg text-xl font-bold text-orange-600 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
                    required>

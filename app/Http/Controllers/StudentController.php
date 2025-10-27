@@ -356,15 +356,21 @@ class StudentController extends Controller
                 'dob' => $student->dob,
                 'gender' => $student->gender,
                 'guardian_name' => $student->guardian_name,
+                'guardian_relation' => $student->guardian_relation,
                 'guardian_phone' => $student->guardian_phone,
                 'guardian_email' => $student->guardian_email,
+                'guardian_address' => $student->guardian_address,
+                'guardian_city' => $student->guardian_city,
+                'guardian_notes' => $student->guardian_notes,
                 'city' => $student->city,
                 'post_code' => $student->post_code,
                 'notes' => $student->notes,
                 'enroll_date' => $student->enroll_date,
                 'start_date' => $student->start_date,
                 'deposit' => $student->deposit,
+                'deposit_paid' => $student->deposit_paid,
                 'fee_amount' => $student->fee_amount,
+                'period' => $student->period,
             ];
         }
 
@@ -424,8 +430,12 @@ class StudentController extends Controller
             'students.*.dob' => 'nullable|date',
             'students.*.gender' => 'nullable|string',
             'students.*.guardian_name' => 'nullable|string|max:255',
+            'students.*.guardian_relation' => 'nullable|string|max:255',
             'students.*.guardian_phone' => 'nullable|string|max:50',
             'students.*.guardian_email' => 'nullable|email|max:255',
+            'students.*.guardian_address' => 'nullable|string|max:255',
+            'students.*.guardian_city' => 'nullable|string|max:255',
+            'students.*.guardian_notes' => 'nullable|string|max:255',
             'students.*.city' => 'nullable|string|max:255',
             'students.*.post_code' => 'nullable|string|max:20',
             'students.*.notes' => 'nullable|string',
@@ -434,28 +444,58 @@ class StudentController extends Controller
             'students.*.deposit' => 'nullable|numeric|min:0',
             'students.*.deposit_paid' => 'nullable|in:0,1',
             'students.*.fee_amount' => 'nullable|numeric|min:0',
+            'students.*.period' => 'nullable|string|in:weekly,monthly',
         ]);
 
-        // Get existing admission data from session
-        $admission = $request->session()->get('admission', []);
+        // Get existing students from database to preserve IDs
+        $existingStudents = Student::where('reference', $reference)->orderBy('id')->get();
         
-        // Keep the student IDs for update
-        $existingStudentIds = [];
-        foreach ($admission['students'] ?? [] as $index => $student) {
-            if (isset($student['id'])) {
-                $existingStudentIds[$index] = $student['id'];
+        // Get existing timetable for building timetable structure
+        $timetableEntries = Timetable::where('student_reference', $reference)
+            ->orderBy('student_id')
+            ->orderBy('day_of_week')
+            ->orderBy('start_time')
+            ->get();
+
+        // Build timetable data structure
+        $timetableData = [];
+        $dayMap = [0 => 'Mon', 1 => 'Tue', 2 => 'Wed', 3 => 'Thu', 4 => 'Fri', 5 => 'Sat', 6 => 'Sun'];
+        
+        foreach ($timetableEntries as $entry) {
+            // Find which student index this entry belongs to
+            $studentIndex = null;
+            foreach ($existingStudents as $idx => $student) {
+                if ($entry->student_id == $student->id) {
+                    $studentIndex = $idx;
+                    break;
+                }
+            }
+            
+            if ($studentIndex !== null) {
+                $dayString = $dayMap[$entry->day_of_week] ?? null;
+                
+                if ($dayString) {
+                    // Determine slot index from start time
+                    $slotIndex = $this->getSlotIndexFromTime($entry->start_time, $dayString);
+                    
+                    if ($slotIndex !== null) {
+                        $timetableData[$studentIndex][$dayString][$slotIndex] = $entry->subject;
+                    }
+                }
             }
         }
 
-        // Merge new data with existing
-        $admission = array_merge($admission, $validated);
-        $admission['reference'] = $reference;  // Preserve reference
-        $admission['is_edit'] = true;  // Preserve edit flag
-        
-        // Restore student IDs
-        foreach ($existingStudentIds as $index => $id) {
-            $admission['students'][$index]['id'] = $id;
+        // Merge validated data with student IDs from database
+        foreach ($validated['students'] as $index => &$studentData) {
+            if (isset($existingStudents[$index])) {
+                $studentData['id'] = $existingStudents[$index]->id;
+            }
         }
+        
+        $admission = $validated;
+        $admission['reference'] = $reference;
+        $admission['is_edit'] = true;
+        $admission['timetable'] = $timetableData;
 
         $request->session()->put('admission', $admission);
 
@@ -477,10 +517,24 @@ class StudentController extends Controller
             return redirect()->route('students.index')->with('error', 'Reference mismatch');
         }
 
-        $timetableInput = $admission['timetable'] ?? [];
+        // Get timetable from request input (the form submission), NOT from session
+        $timetableInput = $request->input('timetable', []);
         $period = $admission['period'] ?? 'weekly';
 
-        // Update existing students
+        // Build guardian data from first student (all siblings share guardian info)
+        $guardianData = [
+            'guardian_name' => $admission['students'][0]['guardian_name'] ?? null,
+            'guardian_relation' => $admission['students'][0]['guardian_relation'] ?? null,
+            'guardian_phone' => $admission['students'][0]['guardian_phone'] ?? null,
+            'guardian_email' => $admission['students'][0]['guardian_email'] ?? null,
+            'guardian_address' => $admission['students'][0]['guardian_address'] ?? null,
+            'guardian_city' => $admission['students'][0]['guardian_city'] ?? null,
+            'guardian_notes' => $admission['students'][0]['guardian_notes'] ?? null,
+            'post_code' => $admission['students'][0]['post_code'] ?? null,
+        ];
+
+        // Update existing students OR create new ones
+        $processedStudents = [];
         foreach ($admission['students'] as $idx => $studentData) {
             if (isset($studentData['id'])) {
                 // Update existing student
@@ -492,8 +546,12 @@ class StudentController extends Controller
                         'dob' => $studentData['dob'] ?? null,
                         'gender' => $studentData['gender'] ?? null,
                         'guardian_name' => $studentData['guardian_name'] ?? null,
+                        'guardian_relation' => $studentData['guardian_relation'] ?? null,
                         'guardian_phone' => $studentData['guardian_phone'] ?? null,
                         'guardian_email' => $studentData['guardian_email'] ?? null,
+                        'guardian_address' => $studentData['guardian_address'] ?? null,
+                        'guardian_city' => $studentData['guardian_city'] ?? null,
+                        'guardian_notes' => $studentData['guardian_notes'] ?? null,
                         'city' => $studentData['city'] ?? null,
                         'post_code' => $studentData['post_code'] ?? null,
                         'notes' => $studentData['notes'] ?? null,
@@ -502,9 +560,26 @@ class StudentController extends Controller
                         'deposit' => $studentData['deposit'] ?? 0,
                         'deposit_paid' => $studentData['deposit_paid'] ?? 0,
                         'fee_amount' => $studentData['fee_amount'] ?? 0,
-                        'period' => $period,
+                        'period' => $studentData['period'] ?? $period,
                     ]);
+                    $processedStudents[] = $student;
                 }
+            } else {
+                // Create new sibling (no id means it's a new addition)
+                $newStudentData = [
+                    'reference' => $reference,
+                    'first_name' => $studentData['first_name'] ?? null,
+                    'last_name' => $studentData['last_name'] ?? null,
+                    'gender' => $studentData['gender'] ?? null,
+                    'dob' => $studentData['dob'] ?? null,
+                    'period' => $studentData['period'] ?? $period,
+                ] + $guardianData;
+
+                // Filter to only columns that exist
+                $allowed = Schema::hasTable('students') ? Schema::getColumnListing('students') : [];
+                $payload = array_intersect_key($newStudentData, array_flip($allowed));
+                $student = Student::create($payload);
+                $processedStudents[] = $student;
             }
         }
 
@@ -562,10 +637,8 @@ class StudentController extends Controller
             ],
         ];
 
-        // Get updated students from database
-        $updatedStudents = Student::where('reference', $reference)->orderBy('id')->get();
-
-        foreach ($updatedStudents as $idx => $stu) {
+        // Use the processed students (includes both updated and newly created)
+        foreach ($processedStudents as $idx => $stu) {
             $studentTimetable = $timetableInput[$idx] ?? [];
 
             foreach ($studentTimetable as $dayString => $slots) {
@@ -704,5 +777,20 @@ class StudentController extends Controller
         return redirect()->back()->with('success', 
             'Payment amount updated from £' . number_format($oldPayment, 2) . 
             ' to £' . number_format($data['payment'], 2));
+    }
+
+    /**
+     * Update student new plan (reference only field)
+     */
+    public function updateNewPlan(Request $request, $id)
+    {
+        $data = $request->validate([
+            'new_plan' => 'nullable|numeric|min:0|max:99999.99',
+        ]);
+        
+        $student = Student::findOrFail($id);
+        $student->update(['new_plan' => $data['new_plan']]);
+        
+        return redirect()->back()->with('status', 'Student New Plan saved successfully.');
     }
 }
