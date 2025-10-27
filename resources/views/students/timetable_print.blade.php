@@ -45,6 +45,24 @@
         align-items: baseline;
     }
     
+    /* Monthly week sections */
+    .week-section {
+        margin-bottom: 2.5rem;
+        padding: 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        background: #f9fafb;
+    }
+    
+    .week-section h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #3b82f6;
+    }
+    
     /* Button styling */
     .no-print button,
     .no-print a {
@@ -124,6 +142,26 @@
         aside { display: none !important; }
         main { padding: 0 !important; }
         
+        /* Portrait orientation for all prints */
+        @page { 
+            size: portrait;
+            margin: 15mm;
+        }
+        
+        /* Each week on new page for monthly */
+        .week-section {
+            page-break-after: always;
+            page-break-inside: avoid;
+            border: none;
+            background: white;
+            padding: 0;
+            margin-bottom: 0;
+        }
+        
+        .week-section:last-child {
+            page-break-after: auto;
+        }
+        
         /* Compact for print */
         .compact-page {
             max-width: 100%;
@@ -154,6 +192,14 @@
         .compact-slot {
             margin-bottom: 0.15rem;
             line-height: 1.2;
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: baseline !important;
+            gap: 0.5rem !important;
+        }
+        
+        .compact-slot span {
+            display: inline-block !important;
         }
         
         /* Force single page */
@@ -219,22 +265,48 @@
                             $dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
                         @endphp
 
-                        {{-- List by Day --}}
-                        @foreach($dayOrder as $day)
-                            @if(isset($timetableGrid['grid'][$day]) && count($timetableGrid['grid'][$day]) > 0)
-                                <div class="compact-day">
-                                    <h3 class="font-bold text-gray-900 border-b-2 border-gray-400 text-base">{{ $day }}</h3>
-                                    <div class="ml-4 mt-2">
-                                        @foreach($timetableGrid['grid'][$day] as $timeSlot => $entry)
-                                            <div class="compact-slot">
-                                                <span class="text-gray-600 font-medium min-w-[130px] inline-block">{{ $timeSlot }}</span>
-                                                <span class="text-gray-900 font-semibold">{{ $entry['subject'] }}</span>
+                        {{-- Check if Monthly Schedule --}}
+                        @if(isset($timetableGrid['isMonthly']) && $timetableGrid['isMonthly'])
+                            {{-- Monthly: Show stacked weeks (Approach 1) --}}
+                            @foreach($timetableGrid['grid'] as $weekLabel => $weekData)
+                                <div class="week-section">
+                                    <h3>{{ $weekLabel }}</h3>
+                                    
+                                    @foreach($dayOrder as $day)
+                                        @if(isset($weekData[$day]) && count($weekData[$day]) > 0)
+                                            <div class="compact-day">
+                                                <h3 class="font-bold text-gray-900 border-b-2 border-gray-400 text-base">{{ $day }}</h3>
+                                                <div class="ml-4 mt-2">
+                                                    @foreach($weekData[$day] as $timeSlot => $entry)
+                                                        <div class="compact-slot">
+                                                            <span class="text-gray-600 font-medium min-w-[130px] inline-block">{{ $timeSlot }}</span>
+                                                            <span class="text-gray-900 font-semibold">{{ $entry['subject'] }}</span>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
                                             </div>
-                                        @endforeach
-                                    </div>
+                                        @endif
+                                    @endforeach
                                 </div>
-                            @endif
-                        @endforeach
+                            @endforeach
+                        @else
+                            {{-- Weekly: Show standard list by day --}}
+                            @foreach($dayOrder as $day)
+                                @if(isset($timetableGrid['grid'][$day]) && count($timetableGrid['grid'][$day]) > 0)
+                                    <div class="compact-day">
+                                        <h3 class="font-bold text-gray-900 border-b-2 border-gray-400 text-base">{{ $day }}</h3>
+                                        <div class="ml-4 mt-2">
+                                            @foreach($timetableGrid['grid'][$day] as $timeSlot => $entry)
+                                                <div class="compact-slot">
+                                                    <span class="text-gray-600 font-medium min-w-[130px] inline-block">{{ $timeSlot }}</span>
+                                                    <span class="text-gray-900 font-semibold">{{ $entry['subject'] }}</span>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+                            @endforeach
+                        @endif
 
                     @else
                         <div class="text-center py-8 text-gray-500">
@@ -300,22 +372,48 @@
                         $dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
                     @endphp
 
-                    {{-- List by Day --}}
-                    @foreach($dayOrder as $day)
-                        @if(isset($timetableGrid['grid'][$day]) && count($timetableGrid['grid'][$day]) > 0)
-                            <div class="compact-day">
-                                <h3 class="font-bold text-gray-800 border-b border-gray-400">{{ $day }}</h3>
-                                <div class="ml-3">
-                                    @foreach($timetableGrid['grid'][$day] as $timeSlot => $entry)
-                                        <div class="compact-slot flex gap-2">
-                                            <span class="text-gray-600 text-sm min-w-[100px]">{{ $timeSlot }}</span>
-                                            <span class="text-gray-900 font-medium text-sm">{{ $entry['subject'] }}</span>
+                    {{-- Check if Monthly Schedule --}}
+                    @if(isset($timetableGrid['isMonthly']) && $timetableGrid['isMonthly'])
+                        {{-- Monthly: Show stacked weeks (Approach 1) --}}
+                        @foreach($timetableGrid['grid'] as $weekLabel => $weekData)
+                            <div class="week-section">
+                                <h3>{{ $weekLabel }}</h3>
+                                
+                                @foreach($dayOrder as $day)
+                                    @if(isset($weekData[$day]) && count($weekData[$day]) > 0)
+                                        <div class="compact-day">
+                                            <h3 class="font-bold text-gray-800 border-b border-gray-400">{{ $day }}</h3>
+                                            <div class="ml-3">
+                                                @foreach($weekData[$day] as $timeSlot => $entry)
+                                                    <div class="compact-slot flex gap-2">
+                                                        <span class="text-gray-600 text-sm min-w-[100px]">{{ $timeSlot }}</span>
+                                                        <span class="text-gray-900 font-medium text-sm">{{ $entry['subject'] }}</span>
+                                                    </div>
+                                                @endforeach
+                                            </div>
                                         </div>
-                                    @endforeach
-                                </div>
+                                    @endif
+                                @endforeach
                             </div>
-                        @endif
-                    @endforeach
+                        @endforeach
+                    @else
+                        {{-- Weekly: Show standard list by day --}}
+                        @foreach($dayOrder as $day)
+                            @if(isset($timetableGrid['grid'][$day]) && count($timetableGrid['grid'][$day]) > 0)
+                                <div class="compact-day">
+                                    <h3 class="font-bold text-gray-800 border-b border-gray-400">{{ $day }}</h3>
+                                    <div class="ml-3">
+                                        @foreach($timetableGrid['grid'][$day] as $timeSlot => $entry)
+                                            <div class="compact-slot flex gap-2">
+                                                <span class="text-gray-600 text-sm min-w-[100px]">{{ $timeSlot }}</span>
+                                                <span class="text-gray-900 font-medium text-sm">{{ $entry['subject'] }}</span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+                        @endforeach
+                    @endif
 
                 @else
                     <div class="text-center py-4 text-gray-500 text-sm">
