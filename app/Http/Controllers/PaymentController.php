@@ -567,4 +567,22 @@ class PaymentController extends Controller
 
         return redirect()->back()->with('success', "Added £" . number_format($amountToAdd, 2) . ". New pending: £" . number_format($newPending, 2));
     }
+
+    /**
+     * Set pending amount to specific value (replaces existing)
+     */
+    public function setPendingAmount(Request $request, Student $student)
+    {
+        $request->validate([
+            'amount_to_set' => 'required|numeric|min:0'
+        ]);
+
+        $amountToSet = $request->amount_to_set;
+
+        $student->update([
+            'pending_amount' => $amountToSet
+        ]);
+
+        return redirect()->back()->with('success', "Pending amount set to £" . number_format($amountToSet, 2));
+    }
 }

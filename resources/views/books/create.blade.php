@@ -147,9 +147,9 @@
                                     <td><strong>£{{ number_format($book->price, 2) }}</strong></td>
                                     @if(Schema::hasColumn('books', 'student_reference'))
                                     <td>
-                                        @if($book->first_name && $book->last_name)
+                                        @if($book->first_name)
                                             <div>
-                                                <strong class="d-block">{{ $book->first_name }} {{ $book->last_name }}</strong>
+                                                <strong class="d-block">{{ trim($book->first_name . ' ' . $book->last_name) }}</strong>
                                                 <small class="text-muted">{{ $book->student_ref }}</small>
                                             </div>
                                         @else

@@ -24,7 +24,7 @@
 <td class="text-sm">
   @if(isset($b->first_name) && $b->first_name)
     <div>
-      <strong class="block text-sm">{{ $b->first_name }} {{ $b->last_name }}</strong>
+      <strong class="block text-sm">{{ trim($b->first_name . ' ' . $b->last_name) }}</strong>
       <span class="text-gray-500 text-xs">{{ $b->student_ref }}</span>
     </div>
   @else

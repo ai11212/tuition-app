@@ -100,20 +100,39 @@
       <div class="mb-4 pb-4 border-b border-blue-200">
         <div class="max-w-lg">
           <span class="text-blue-700 font-medium text-base">Amount:</span><br>
-          <form method="POST" action="{{ route('student.addPendingAmount', $studentDetails['student']->id) }}" class="inline-flex items-center gap-2 mt-2">
-            @csrf
-            @method('PATCH')
+          <div class="inline-flex items-center gap-2 mt-2">
             <span class="text-xl font-bold text-orange-600">£</span>
-            <input type="number" name="amount_to_add" value="0" 
+            <input type="number" id="pending-amount-input" value="0" 
                    step="0.01" min="0" 
                    class="w-32 px-3 py-2 border-2 border-orange-300 rounded-lg text-xl font-bold text-orange-600 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
                    required>
-            <button type="submit" class="px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition-colors">
-              ➕ Add
-            </button>
-          </form>
+            
+            {{-- Add Button (existing) --}}
+            <form method="POST" action="{{ route('student.addPendingAmount', $studentDetails['student']->id) }}" class="inline">
+              @csrf
+              @method('PATCH')
+              <input type="hidden" name="amount_to_add" id="add-amount-hidden">
+              <button type="submit" 
+                      onclick="document.getElementById('add-amount-hidden').value = document.getElementById('pending-amount-input').value"
+                      class="px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition-colors">
+                ➕ Add
+              </button>
+            </form>
+            
+            {{-- Set Button (new) --}}
+            <form method="POST" action="{{ route('student.setPendingAmount', $studentDetails['student']->id) }}" class="inline">
+              @csrf
+              @method('PATCH')
+              <input type="hidden" name="amount_to_set" id="set-amount-hidden">
+              <button type="submit" 
+                      onclick="document.getElementById('set-amount-hidden').value = document.getElementById('pending-amount-input').value"
+                      class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                📌 Set
+              </button>
+            </form>
+          </div>
           <div class="text-xs text-gray-600 mt-2 italic">
-            💡 Enter amount to add to pending (e.g., weekly £200 fee)
+            💡 <strong>Add:</strong> Adds to pending | <strong>Set:</strong> Resets to this amount
           </div>
         </div>
       </div>
