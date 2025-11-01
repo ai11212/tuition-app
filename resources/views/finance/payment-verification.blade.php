@@ -135,9 +135,9 @@
             </div>
         </div>
         <div class="mt-2 text-xs text-gray-600">
-            <strong>Expected</strong> = Deposit + Payment (from student record) | 
+            <strong>Expected</strong> = Payment (from student record) | 
             <strong>Paid</strong> = Total of all payment transactions | 
-            <strong>Balance</strong> = Expected - Paid
+            <strong>Balance</strong> = Pending Amount (manually tracked amount owed)
         </div>
     </div>
 </div>

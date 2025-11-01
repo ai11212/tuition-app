@@ -33,19 +33,26 @@ class PaymentVerificationController extends Controller
                     ->where('invoices.student_id', $student->id)
                     ->sum('payment_transactions.amount');
                 
-                // Expected amount (payment only - deposit shown for reference but not included)
-                $expectedTotal = ($student->payment ?? 0);
+                // Calculate total book price for this student (same logic as Payments page)
+                // Books are assigned via student_reference which contains student ID
+                $totalBookPrice = DB::table('books')
+                    ->leftJoin('students', 'books.student_reference', '=', 'students.id')
+                    ->where('students.reference', $student->reference)
+                    ->sum('books.price');
                 
-                // Balance
-                $balance = $expectedTotal - $totalPaid;
+                // Expected amount (pending_amount + books) - same calculation as Payments page
+                $expectedTotal = ($student->pending_amount ?? $student->payment ?? 0) + $totalBookPrice;
                 
-                // Payment status
-                if ($balance < -10) {
-                    $paymentStatus = 'overpaid';
-                } elseif (abs($balance) <= 10) {
+                // Balance - calculated payment pending (same as Payments page)
+                $balance = max(0, $expectedTotal - $totalPaid);
+                
+                // Payment status based on balance
+                if ($balance > 10) {
+                    $paymentStatus = 'pending';
+                } elseif ($balance <= 10) {
                     $paymentStatus = 'paid';
                 } else {
-                    $paymentStatus = 'pending';
+                    $paymentStatus = 'overpaid';
                 }
                 
                 // Get last payment date

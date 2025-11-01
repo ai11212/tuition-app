@@ -110,7 +110,7 @@
                     </div>
 
                     {{-- Student Personal Info --}}
-                    <div class="col-md-{{ $index == 0 ? '4' : '6' }}">
+                    <div class="col-md-{{ $index == 0 ? '3' : '4' }}">
                         <label class="form-label">Gender</label>
                         <select name="students[{{ $index }}][gender]" class="form-select">
                             <option value="">— Select —</option>
@@ -119,10 +119,15 @@
                             <option value="other" {{ strtolower(old('students.'.$index.'.gender', $student->gender)) == 'other' ? 'selected' : '' }}>Other</option>
                         </select>
                     </div>
-                    <div class="col-md-{{ $index == 0 ? '4' : '6' }}">
+                    <div class="col-md-{{ $index == 0 ? '3' : '4' }}">
                         <label class="form-label">Date of birth</label>
                         <input type="date" name="students[{{ $index }}][dob]" class="form-control" 
                                value="{{ old('students.'.$index.'.dob', $student->dob) }}">
+                    </div>
+                    <div class="col-md-{{ $index == 0 ? '3' : '4' }}">
+                        <label class="form-label">Year</label>
+                        <input type="number" name="students[{{ $index }}][year]" min="1" max="16" class="form-control" 
+                               value="{{ old('students.'.$index.'.year', $student->year) }}" placeholder="1-16">
                     </div>
 
                     @if($index == 0)
@@ -243,6 +248,10 @@
             <div class="col-md-4">
               <label class="form-label">Date of birth</label>
               <input type="date" name="students[${i}][dob]" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Year</label>
+              <input type="number" name="students[${i}][year]" min="1" max="16" class="form-control" placeholder="1-16">
             </div>
           </div>
         </div>

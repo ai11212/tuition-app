@@ -78,6 +78,7 @@ class StudentController extends Controller
             'last_name'         => 'required|string|max:100',
             'gender'            => 'nullable|in:male,female,other',
             'dob'               => 'nullable|date',
+            'year'              => 'nullable|integer|min:1|max:16',
             'city'              => 'nullable|string|max:120',
             'enroll_date'       => 'nullable|date',
             'start_date'        => 'nullable|date',
@@ -92,6 +93,7 @@ class StudentController extends Controller
             'siblings.*.last_name'          => 'nullable|string|max:100',
             'siblings.*.gender'             => 'nullable|in:male,female,other',
             'siblings.*.dob'                => 'nullable|date',
+            'siblings.*.year'               => 'nullable|integer|min:1|max:16',
         ]);
 
         // trim/cap guardian post_code (multibyte safe)
@@ -165,6 +167,7 @@ class StudentController extends Controller
             'last_name'   => $admission['last_name'] ?? null,
             'gender'      => $admission['gender'] ?? null,
             'dob'         => $admission['dob'] ?? null,
+            'year'        => $admission['year'] ?? null,
             'guardian_city' => $admission['guardian_city'] ?? null,
             'city'        => $admission['guardian_city'] ?? null, // Map guardian_city to city as well
             'enroll_date' => $admission['enroll_date'] ?? null,
@@ -193,6 +196,7 @@ class StudentController extends Controller
                 'last_name'  => $sib['last_name'] ?? null,
                 'gender'     => $sib['gender'] ?? null,
                 'dob'        => $sib['dob'] ?? null,
+                'year'       => $sib['year'] ?? null,
             ] + $guardian;
 
             // skip fully empty names
@@ -428,6 +432,7 @@ class StudentController extends Controller
             'students.*.first_name' => 'required|string|max:255',
             'students.*.last_name' => 'required|string|max:255',
             'students.*.dob' => 'nullable|date',
+            'students.*.year' => 'nullable|integer|min:1|max:16',
             'students.*.gender' => 'nullable|string',
             'students.*.guardian_name' => 'nullable|string|max:255',
             'students.*.guardian_relation' => 'nullable|string|max:255',
@@ -544,6 +549,7 @@ class StudentController extends Controller
                         'first_name' => $studentData['first_name'] ?? null,
                         'last_name' => $studentData['last_name'] ?? null,
                         'dob' => $studentData['dob'] ?? null,
+                        'year' => $studentData['year'] ?? null,
                         'gender' => $studentData['gender'] ?? null,
                         'guardian_name' => $studentData['guardian_name'] ?? null,
                         'guardian_relation' => $studentData['guardian_relation'] ?? null,
@@ -572,6 +578,7 @@ class StudentController extends Controller
                     'last_name' => $studentData['last_name'] ?? null,
                     'gender' => $studentData['gender'] ?? null,
                     'dob' => $studentData['dob'] ?? null,
+                    'year' => $studentData['year'] ?? null,
                     'period' => $studentData['period'] ?? $period,
                 ] + $guardianData;
 

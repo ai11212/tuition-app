@@ -81,7 +81,7 @@
                         <input type="text" name="last_name" class="form-control" value="{{ old('last_name') }}" required>
                     </div>
                         <!-- student contact fields removed as requested -->
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label">Gender</label>
                         <select name="gender" class="form-select">
                             <option value="">— Select —</option>
@@ -90,9 +90,13 @@
                             <option value="other"  @selected(old('gender')==='other')>Other</option>
                         </select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label">Date of birth</label>
                         <input type="date" name="dob" class="form-control" value="{{ old('dob') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Year</label>
+                        <input type="number" name="year" min="1" max="16" class="form-control" value="{{ old('year') }}" placeholder="1-16">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Enroll date</label>
@@ -166,7 +170,7 @@
               <label class="form-label">Last name</label>
               <input type="text" name="siblings[${i}][last_name]" class="form-control">
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
               <label class="form-label">Gender</label>
               <select name="siblings[${i}][gender]" class="form-select">
                 <option value="">— Select —</option>
@@ -175,9 +179,13 @@
                 <option value="other">Other</option>
               </select>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
               <label class="form-label">Date of birth</label>
               <input type="date" name="siblings[${i}][dob]" class="form-control">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Year</label>
+              <input type="number" name="siblings[${i}][year]" min="1" max="16" class="form-control" placeholder="1-16">
             </div>
           </div>
         </div>

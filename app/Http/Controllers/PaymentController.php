@@ -26,6 +26,8 @@ class PaymentController extends Controller
                 'payment_transactions.*',
                 'invoices.id as invoice_id',
                 'invoices.reference as invoice_ref',
+                'invoices.period_from',
+                'invoices.period_to',
                 'students.reference as student_ref',
                 DB::raw("CONCAT(COALESCE(students.first_name,''),' ',COALESCE(students.last_name,'')) as student_name")
             ]);

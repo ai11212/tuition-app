@@ -61,7 +61,7 @@
             $siblings = \App\Models\Student::where('reference', $studentDetails['student']->reference)->get();
           @endphp
           @foreach($siblings as $sibling)
-            <span class="text-lg">{{ $sibling->first_name }} {{ $sibling->last_name }}</span><br>
+            <span class="text-lg">{{ $sibling->first_name }} {{ $sibling->last_name }}@if($sibling->year) (Year {{ $sibling->year }})@endif</span><br>
           @endforeach
         </div>
         <div>
@@ -330,6 +330,7 @@
           <th class="px-3 py-2 text-left">Student</th>
           <th class="px-3 py-2 text-left">Method</th>
           <th class="px-3 py-2 text-right">Amount (£)</th>
+          <th class="px-3 py-2 text-left">Payment Period</th>
           <th class="px-3 py-2 text-left">Invoice</th>
           <th class="px-3 py-2 text-left">Notes</th>
           <th class="px-3 py-2 text-left">Actions</th>
@@ -353,6 +354,13 @@
             <td class="px-3 py-2">{{ $p->student_name ?? '' }}</td>
             <td class="px-3 py-2">{{ $p->method }}</td>
             <td class="px-3 py-2 text-right">£{{ number_format($p->amount,2) }}</td>
+            <td class="px-3 py-2 whitespace-nowrap">
+              @if($p->period_from && $p->period_to)
+                {{ \Carbon\Carbon::parse($p->period_from)->format('d/m/y') }} - {{ \Carbon\Carbon::parse($p->period_to)->format('d/m/y') }}
+              @else
+                -
+              @endif
+            </td>
             <td class="px-3 py-2">{{ $p->invoice_ref ?? '' }}</td>
             <td class="px-3 py-2">{{ $p->notes }}</td>
             <td class="px-3 py-2">
@@ -387,7 +395,7 @@
             </td>
           </tr>
         @empty
-          <tr><td class="px-3 py-6 text-center text-gray-500" colspan="8">No payments found.</td></tr>
+          <tr><td class="px-3 py-6 text-center text-gray-500" colspan="9">No payments found.</td></tr>
         @endforelse
       </tbody>
     </table>

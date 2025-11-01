@@ -63,6 +63,9 @@
           <div><strong>Name:</strong> {{ ($student['first_name'] ?? '') . ' ' . ($student['last_name'] ?? '') }}</div>
           <div><strong>Gender:</strong> {{ $student['gender'] ?? '' }}</div>
           <div><strong>DOB:</strong> {{ $student['dob'] ?? '' }}</div>
+          @if(!empty($student['year']))
+          <div><strong>Year:</strong> {{ $student['year'] }}</div>
+          @endif
           @if($idx == 0)
             <div><strong>Enroll date:</strong> {{ $student['enroll_date'] ?? '' }}</div>
             <div><strong>Start date:</strong> {{ $student['start_date'] ?? '' }}</div>
@@ -82,6 +85,9 @@
         <div><strong>Name:</strong> {{ ($a['first_name'] ?? '') . ' ' . ($a['last_name'] ?? '') }}</div>
         <div><strong>Gender:</strong> {{ $a['gender'] ?? '' }}</div>
         <div><strong>DOB:</strong> {{ $a['dob'] ?? '' }}</div>
+        @if(!empty($a['year']))
+        <div><strong>Year:</strong> {{ $a['year'] }}</div>
+        @endif
         <div><strong>Enroll date:</strong> {{ $a['enroll_date'] ?? '' }}</div>
         <div><strong>Start date:</strong> {{ $a['start_date'] ?? '' }}</div>
         <div><strong>Deposit:</strong> {{ $a['deposit'] ?? '' }}</div>
@@ -98,6 +104,9 @@
             <div><strong>Name:</strong> {{ ($s['first_name'] ?? '') . ' ' . ($s['last_name'] ?? '') }}</div>
             <div><strong>Gender:</strong> {{ $s['gender'] ?? '' }}</div>
             <div><strong>DOB:</strong> {{ $s['dob'] ?? '' }}</div>
+            @if(!empty($s['year']))
+            <div><strong>Year:</strong> {{ $s['year'] }}</div>
+            @endif
           </div>
         </div>
       @endforeach
