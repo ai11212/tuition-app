@@ -98,7 +98,7 @@
                         <label class="form-label">Year</label>
                         <input type="number" name="year" min="1" max="16" class="form-control" value="{{ old('year') }}" placeholder="1-16">
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4" style="display: none;">
                         <label class="form-label">Enroll date</label>
                         <input type="date" name="enroll_date" class="form-control" value="{{ old('enroll_date') }}">
                     </div>

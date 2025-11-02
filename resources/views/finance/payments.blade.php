@@ -56,12 +56,18 @@
           <span class="text-lg font-semibold">{{ $studentDetails['student']->reference }}</span>
         </div>
         <div>
-          <span class="text-blue-700 font-medium">Name:</span><br>
+          <div class="flex gap-4">
+            <span class="text-blue-700 font-medium w-40">Name:</span>
+            <span class="text-blue-700 font-medium">Year:</span>
+          </div>
           @php
             $siblings = \App\Models\Student::where('reference', $studentDetails['student']->reference)->get();
           @endphp
           @foreach($siblings as $sibling)
-            <span class="text-lg">{{ $sibling->first_name }} {{ $sibling->last_name }}@if($sibling->year) (Year {{ $sibling->year }})@endif</span><br>
+            <div class="flex gap-4">
+              <span class="text-lg w-40">{{ $sibling->first_name }} {{ $sibling->last_name }}</span>
+              <span class="text-lg">{{ $sibling->year ?? '-' }}</span>
+            </div>
           @endforeach
         </div>
         <div>
