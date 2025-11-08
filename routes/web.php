@@ -91,6 +91,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/accounts',        [\App\Http\Controllers\PaymentController::class,'summary'])->name('accounts.summary');
     Route::get('/payment-verification', [\App\Http\Controllers\PaymentVerificationController::class,'index'])->name('payment.verification');
 
+    // Payment Reminders Module (NEW - can be commented out to disable)
+    Route::get('/payment-reminders',          [\App\Http\Controllers\PaymentReminderController::class, 'index'])->name('reminders.index');
+    Route::get('/payment-reminders/settings', [\App\Http\Controllers\PaymentReminderController::class, 'settings'])->name('reminders.settings');
+    Route::post('/payment-reminders/settings',[\App\Http\Controllers\PaymentReminderController::class, 'updateSettings'])->name('reminders.updateSettings');
+    Route::post('/payment-reminders/skip/{id}',[\App\Http\Controllers\PaymentReminderController::class, 'skip'])->name('reminders.skip');
+    Route::post('/payment-reminders/refresh', [\App\Http\Controllers\PaymentReminderController::class, 'refresh'])->name('reminders.refresh');
+
     // Expenses
     Route::get('/expenses',         [\App\Http\Controllers\ExpenseController::class,'index'])->name('expenses');
     Route::post('/expenses',        [\App\Http\Controllers\ExpenseController::class,'store'])->name('expenses.store');

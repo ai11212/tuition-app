@@ -111,6 +111,17 @@
             <a href="/payment-verification?search=&status=pending" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">Defaulter List</a>
             <a href="/accounts" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">Accounts Summary</a>
             <a href="/expenses" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">Expenses</a>
+            @if(config('reminders.enabled'))
+              <a href="/payment-reminders" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900 flex items-center justify-between">
+                <span>Payment Reminders</span>
+                @php
+                  $badgeCount = \App\Http\Controllers\PaymentReminderController::getBadgeCount();
+                @endphp
+                @if($badgeCount > 0)
+                  <span class="badge bg-danger rounded-pill">{{ $badgeCount }}</span>
+                @endif
+              </a>
+            @endif
           </div>
         </div>
 
@@ -168,6 +179,17 @@
       <li><a href="/defaulters" class="block px-3 py-2 rounded hover:bg-gray-100 {{ request()->is('defaulters') ? 'active' : '' }}" @click="open=false">⚠️ Defaulter List</a></li>
       <li><a href="/accounts" class="block px-3 py-2 rounded hover:bg-gray-100 {{ request()->is('accounts') ? 'active' : '' }}" @click="open=false">🧾 Accounts Summary</a></li>
       <li><a href="/expenses" class="block px-3 py-2 rounded hover:bg-gray-100 {{ request()->is('expenses') ? 'active' : '' }}" @click="open=false">💸 Expenses</a></li>
+      @if(config('reminders.enabled'))
+      <li>
+        <a href="/payment-reminders" class="flex items-center justify-between px-3 py-2 rounded hover:bg-gray-100 {{ request()->is('payment-reminders*') ? 'active' : '' }}" @click="open=false">
+          <span>🔔 Payment Reminders</span>
+          @php $badgeCount = \App\Http\Controllers\PaymentReminderController::getBadgeCount(); @endphp
+          @if($badgeCount > 0)
+            <span class="badge bg-danger rounded-pill">{{ $badgeCount }}</span>
+          @endif
+        </a>
+      </li>
+      @endif
     </ul>
 
     <div class="text-xs uppercase tracking-wider text-gray-400 px-2 mt-5 mb-2">Library & Reference</div>
