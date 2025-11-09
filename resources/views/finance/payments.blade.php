@@ -49,13 +49,13 @@
     <div class="p-4 rounded-xl border-2 border-blue-200 bg-blue-50 mb-6">
       <h2 class="font-semibold text-blue-900 mb-4">Student Information</h2>
       
-      {{-- Top Row: Basic Info - Fully Responsive Grid --}}
+      {{-- Top Row: Basic Info - Responsive Grid with Column Spanning --}}
       <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4 pb-4 border-b border-blue-200 text-sm">
         <div>
           <span class="text-blue-700 font-medium">Reference:</span><br>
           <span class="text-lg font-semibold">{{ $studentDetails['student']->reference }}</span>
         </div>
-        <div>
+        <div class="md:col-span-2">
           <span class="text-blue-700 font-medium">Name:</span><br>
           @php
             $siblings = \App\Models\Student::where('reference', $studentDetails['student']->reference)->get();
