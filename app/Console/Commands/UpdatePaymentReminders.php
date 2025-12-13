@@ -60,7 +60,7 @@ class UpdatePaymentReminders extends Command
 
             // Calculate days since payment
             $daysSince = $lastPayment 
-                ? now()->diffInDays($lastPayment->paid_on)
+                ? abs(now()->diffInDays($lastPayment->paid_on))
                 : 999; // Never paid
 
             // Determine period (default to weekly)
@@ -119,7 +119,7 @@ class UpdatePaymentReminders extends Command
 
             // Calculate next due date
             $nextDueDate = $lastPayment
-                ? $lastPayment->paid_on->addDays($dueThreshold)
+                ? \Carbon\Carbon::parse($lastPayment->paid_on)->addDays($dueThreshold)
                 : now();
 
             // Create reminder (only one per reference, not per sibling)
