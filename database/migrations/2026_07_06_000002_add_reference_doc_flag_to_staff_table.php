@@ -1,0 +1,32 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('staff', function (Blueprint $table) {
+            $table->boolean('reference_doc')->default(false)->after('hourly_rate');
+        });
+
+        // Teachers who already uploaded a reference document count as "Yes"
+        DB::table('staff')->whereNotNull('reference_file')->update(['reference_doc' => true]);
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('staff', function (Blueprint $table) {
+            $table->dropColumn('reference_doc');
+        });
+    }
+};
