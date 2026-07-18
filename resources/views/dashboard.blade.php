@@ -53,9 +53,11 @@
   <a href="/payments" class="p-3 rounded-lg border bg-white hover:bg-blue-50">Take Payment</a>
   <a href="/reference-profile" class="p-3 rounded-lg border bg-white hover:bg-blue-50">Reference Profile</a>
   <a href="/accounts" class="p-3 rounded-lg border bg-white hover:bg-blue-50">Accounts Summary</a>
-  <a href="/books/create" class="p-3 rounded-lg border bg-white hover:bg-blue-50">Add Books</a>
+  <a href="/books/create" class="p-3 rounded-lg border bg-white hover:bg-blue-50">Issue Books</a>
   <a href="/payment-verification?search=&status=pending" class="p-3 rounded-lg border bg-white hover:bg-blue-50">Defaulter List</a>
   <a href="/students" class="p-3 rounded-lg border bg-white hover:bg-blue-50">Print Time Table</a>
   <a href="/attendance" class="p-3 rounded-lg border bg-white hover:bg-blue-50">Attendance</a>
+  <a href="/book-library" class="p-3 rounded-lg border bg-white hover:bg-blue-50">Book Library</a>
+  <a href="/teachers/create" class="p-3 rounded-lg border bg-white hover:bg-blue-50">Add Teacher</a>
 </div>
 @endsection

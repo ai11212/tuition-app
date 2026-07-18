@@ -10,6 +10,10 @@
 
     // Breakdown defaults
     $breakdown = array_merge(['cash'=>0,'card'=>0,'bank'=>0], $breakdown ?? []);
+    $outBreakdown = array_merge(['cash'=>0,'card'=>0,'bank'=>0], $outBreakdown ?? []);
+    $netBreakdown = array_merge(['cash'=>0,'card'=>0,'bank'=>0], $netBreakdown ?? []);
+    // "-£40.00" style for negative method balances
+    $fmtNet = fn($v) => ((float)$v < 0 ? '-' : '') . '£' . number_format(abs((float)$v), 2);
 
     // Tables
     $daily   = $daily   ?? [];
@@ -31,12 +35,15 @@
   <button class="px-4 py-2 rounded bg-indigo-600 text-white">Apply</button>
 </form>
 
+{{-- Payment Verification button hidden (15/07/2026) — flip to true to restore --}}
+@if(false)
 <div class="flex justify-between items-center mb-4">
   <div></div>
   <a href="{{ route('payment.verification') }}" class="px-4 py-2 rounded-lg border bg-white hover:bg-gray-50 text-sm">
     📊 Payment Verification
   </a>
 </div>
+@endif
 
 <div class="grid md:grid-cols-3 gap-4 mb-6">
   <div class="p-4 rounded-xl border bg-white">
@@ -51,14 +58,22 @@
   <div class="p-4 rounded-xl border bg-white">
     <div class="text-sm text-gray-600">Money Out</div>
     <div class="text-3xl font-semibold mt-1 text-red-600">£{{ number_format((float)$outTotal,2) }}</div>
-    <div class="text-xs text-gray-600 mt-2">Expenses & refunds</div>
+    <div class="text-xs text-gray-600 mt-2">
+      Cash £{{ number_format((float)($outBreakdown['cash'] ?? 0),2) }} •
+      Card £{{ number_format((float)($outBreakdown['card'] ?? 0),2) }} •
+      Bank £{{ number_format((float)($outBreakdown['bank'] ?? 0),2) }}
+    </div>
   </div>
   <div class="p-4 rounded-xl border bg-white">
     <div class="text-sm text-gray-600">Net</div>
     <div class="text-3xl font-semibold mt-1 {{ ($net ?? 0) >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
       £{{ number_format((float)$net,2) }}
     </div>
-    <div class="text-xs text-gray-600 mt-2">In − Out</div>
+    <div class="text-xs text-gray-600 mt-2">
+      Cash {{ $fmtNet($netBreakdown['cash'] ?? 0) }} •
+      Card {{ $fmtNet($netBreakdown['card'] ?? 0) }} •
+      Bank {{ $fmtNet($netBreakdown['bank'] ?? 0) }}
+    </div>
   </div>
 </div>
 
@@ -120,6 +135,9 @@
 </div>
 @endif
 
+{{-- Daily Cash Flow / Weekly Summary / Monthly Summary — hidden on request.
+     To restore, change @if(false) to @if(true) or remove the wrapper. --}}
+@if(false)
 {{-- Daily Cash Flow --}}
 <div class="mb-6 bg-white border rounded-xl overflow-hidden">
   <div class="px-4 py-3 border-b font-semibold">Daily Cash Flow</div>
@@ -183,4 +201,5 @@
     </tbody>
   </table>
 </div>
+@endif
 @endsection

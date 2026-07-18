@@ -126,8 +126,13 @@
                     </div>
                     <div class="col-md-{{ $index == 0 ? '3' : '4' }}">
                         <label class="form-label">Year</label>
-                        <input type="number" name="students[{{ $index }}][year]" min="1" max="16" class="form-control" 
-                               value="{{ old('students.'.$index.'.year', $student->year) }}" placeholder="1-16">
+                        <input type="number" name="students[{{ $index }}][year]" min="1" max="30" class="form-control"
+                               value="{{ old('students.'.$index.'.year', $student->year) }}" placeholder="1-30">
+                    </div>
+                    <div class="col-md-{{ $index == 0 ? '3' : '4' }}">
+                        <label class="form-label">Hourly Rate</label>
+                        <input type="number" step="0.01" min="0" name="students[{{ $index }}][hourly_rate]" class="form-control"
+                               value="{{ old('students.'.$index.'.hourly_rate', $student->hourly_rate) }}">
                     </div>
 
                     @if($index == 0)
@@ -251,7 +256,11 @@
             </div>
             <div class="col-md-4">
               <label class="form-label">Year</label>
-              <input type="number" name="students[${i}][year]" min="1" max="16" class="form-control" placeholder="1-16">
+              <input type="number" name="students[${i}][year]" min="1" max="30" class="form-control" placeholder="1-30">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Hourly Rate</label>
+              <input type="number" step="0.01" min="0" name="students[${i}][hourly_rate]" class="form-control">
             </div>
           </div>
         </div>

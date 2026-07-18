@@ -96,7 +96,11 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Year</label>
-                        <input type="number" name="year" min="1" max="16" class="form-control" value="{{ old('year') }}" placeholder="1-16">
+                        <input type="number" name="year" min="1" max="30" class="form-control" value="{{ old('year') }}" placeholder="1-30">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Hourly Rate</label>
+                        <input type="number" step="0.01" min="0" name="hourly_rate" class="form-control" value="{{ old('hourly_rate') }}">
                     </div>
                     <div class="col-md-4" style="display: none;">
                         <label class="form-label">Enroll date</label>
@@ -185,7 +189,11 @@
             </div>
             <div class="col-md-3">
               <label class="form-label">Year</label>
-              <input type="number" name="siblings[${i}][year]" min="1" max="16" class="form-control" placeholder="1-16">
+              <input type="number" name="siblings[${i}][year]" min="1" max="30" class="form-control" placeholder="1-30">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Hourly Rate</label>
+              <input type="number" step="0.01" min="0" name="siblings[${i}][hourly_rate]" class="form-control">
             </div>
           </div>
         </div>

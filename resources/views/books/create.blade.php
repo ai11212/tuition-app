@@ -13,7 +13,7 @@
 
     <div class="row">
         {{-- Left Column: Add New Book Form --}}
-        <div class="col-md-5">
+        <div class="col-md-3">
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
                     <i class="bi bi-plus-circle"></i> Add New Book
@@ -34,7 +34,7 @@
                                 </button>
                             </div>
                             <div class="form-text">
-                                <i class="bi bi-info-circle"></i> Optional: Search to assign book to specific siblings
+                                <i class="bi bi-info-circle"></i> Required: search and select at least one student
                             </div>
                         </div>
 
@@ -47,6 +47,20 @@
                             <small class="text-muted">Select one or more siblings to assign this book.</small>
                         </div>
                         @endif
+
+                        <div class="mb-3">
+                            <label class="form-label">Book (from Library)</label>
+                            <select id="library_book_picker" class="form-select">
+                                <option value="">— Select from Book Library —</option>
+                                @foreach($libraryBooks as $lb)
+                                    <option data-subject="{{ $lb->subject }}" data-title="{{ $lb->title }}" data-price="{{ $lb->price }}">
+                                        {{ $lb->subject }} — {{ $lb->title }} (£{{ number_format($lb->price, 2) }})
+                                    </option>
+                                @endforeach
+                                <option value="other">Other (enter manually)</option>
+                            </select>
+                            <div class="form-text">Pick a library book to auto-fill the fields below, or choose Other.</div>
+                        </div>
 
                         <div class="mb-3">
                             <label class="form-label">Subject *</label>
@@ -68,11 +82,21 @@
 
                         <div class="mb-3">
                             <label class="form-label">Price (£) *</label>
-                            <input type="number" step="0.01" min="0" name="price" class="form-control @error('price') is-invalid @enderror" 
+                            <input type="number" step="0.01" min="0" name="price" class="form-control @error('price') is-invalid @enderror"
                                    placeholder="0.00" value="{{ old('price') }}" required>
                             @error('price')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Issue Date *</label>
+                            <input type="date" name="issue_date" class="form-control @error('issue_date') is-invalid @enderror"
+                                   value="{{ old('issue_date', date('Y-m-d')) }}" max="{{ date('Y-m-d') }}" required>
+                            @error('issue_date')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <div class="form-text">Today or a past date.</div>
                         </div>
 
                         <div class="d-grid">
@@ -86,7 +110,7 @@
         </div>
 
         {{-- Right Column: Existing Books List --}}
-        <div class="col-md-7">
+        <div class="col-md-9">
             <div class="card">
                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
                     <span><i class="bi bi-book"></i> All Books ({{ $books->total() }})</span>
@@ -126,14 +150,15 @@
                         <table class="table table-hover mb-0 align-middle">
                             <thead class="table-light">
                                 <tr>
-                                    <th style="width: 15%;">Reference</th>
-                                    <th style="width: 12%;">Subject</th>
-                                    <th style="width: 20%;">Title</th>
-                                    <th style="width: 10%;">Price</th>
+                                    <th style="width: 14%;">Reference</th>
+                                    <th style="width: 11%;">Subject</th>
+                                    <th style="width: 19%;">Title</th>
+                                    <th style="width: 9%;">Price</th>
+                                    <th style="width: 11%;">Date</th>
                                     @if(Schema::hasColumn('books', 'student_reference'))
-                                        <th style="width: 15%;">Student</th>
+                                        <th style="width: 14%;">Student</th>
                                     @endif
-                                    <th style="width: 200px;" class="text-center">Actions</th>
+                                    <th style="width: 12%;" class="text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -145,6 +170,7 @@
                                     <td>{{ $book->subject }}</td>
                                     <td>{{ Str::limit($book->title, 30) }}</td>
                                     <td><strong>£{{ number_format($book->price, 2) }}</strong></td>
+                                    <td>{{ ($book->issue_date ?? $book->created_at)->format('d/m/Y') }}</td>
                                     @if(Schema::hasColumn('books', 'student_reference'))
                                     <td>
                                         @if($book->first_name)
@@ -160,7 +186,7 @@
                                     <td class="text-center">
                                         <div class="d-flex gap-1 justify-content-center">
                                             <button type="button" class="btn btn-sm btn-outline-primary" 
-                                                    onclick="editBook({{ $book->id }}, '{{ addslashes($book->reference) }}', '{{ addslashes($book->subject) }}', '{{ addslashes($book->title) }}', {{ $book->price }}, '{{ addslashes($book->student_reference ?? '') }}')"
+                                                    onclick="editBook({{ $book->id }}, '{{ addslashes($book->reference) }}', '{{ addslashes($book->subject) }}', '{{ addslashes($book->title) }}', {{ $book->price }}, '{{ addslashes($book->student_reference ?? '') }}', '{{ ($book->issue_date ?? $book->created_at)->format('Y-m-d') }}')"
                                                     data-bs-toggle="modal" data-bs-target="#editModal"
                                                     style="min-width: 65px;">
                                                 <i class="bi bi-pencil"></i> Edit
@@ -232,6 +258,10 @@
                         <label class="form-label">Price (£) *</label>
                         <input type="number" step="0.01" min="0" name="price" id="edit-price" class="form-control" required>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Issue Date *</label>
+                        <input type="date" name="issue_date" id="edit-issue-date" class="form-control" max="{{ date('Y-m-d') }}" required>
+                    </div>
                     @if(Schema::hasColumn('books', 'student_reference'))
                     <div class="mb-3">
                         <label class="form-label">Student Reference *</label>
@@ -297,12 +327,13 @@
 </style>
 
 <script>
-function editBook(id, reference, subject, title, price, studentRef) {
+function editBook(id, reference, subject, title, price, studentRef, issueDate) {
     document.getElementById('edit-form').action = '/books/' + id;
     document.getElementById('edit-reference').value = reference;
     document.getElementById('edit-subject').value = subject;
     document.getElementById('edit-title').value = title;
     document.getElementById('edit-price').value = price;
+    document.getElementById('edit-issue-date').value = issueDate || '';
     @if(Schema::hasColumn('books', 'student_reference'))
     document.getElementById('edit-student-reference').value = studentRef || '';
     @endif
@@ -362,6 +393,36 @@ function searchSiblings() {
             document.getElementById('sibling_list').innerHTML = '<div class="text-danger">Error loading siblings. Please try again.</div>';
         });
 }
+
+// Book Library picker: auto-fill subject/title/price from the selected catalog entry
+const libraryPicker = document.getElementById('library_book_picker');
+if (libraryPicker) {
+    libraryPicker.addEventListener('change', function() {
+        const form = document.getElementById('add-book-form');
+        const opt = this.options[this.selectedIndex];
+        if (this.value === 'other') {
+            form.querySelector('[name="subject"]').value = '';
+            form.querySelector('[name="title"]').value = '';
+            form.querySelector('[name="price"]').value = '';
+            form.querySelector('[name="subject"]').focus();
+        } else if (opt.dataset.subject !== undefined) {
+            form.querySelector('[name="subject"]').value = opt.dataset.subject;
+            form.querySelector('[name="title"]').value = opt.dataset.title;
+            form.querySelector('[name="price"]').value = opt.dataset.price;
+        }
+    });
+}
+
+@if(Schema::hasColumn('books', 'student_reference'))
+// Issuing requires at least one selected student
+document.getElementById('add-book-form').addEventListener('submit', function(e) {
+    const checked = this.querySelectorAll('input[name="students[]"]:checked');
+    if (checked.length === 0) {
+        e.preventDefault();
+        alert('Please search a student reference and select at least one student before issuing the book.');
+    }
+});
+@endif
 </script>
 
 @endsection

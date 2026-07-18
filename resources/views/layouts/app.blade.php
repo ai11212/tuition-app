@@ -102,15 +102,19 @@
         
         <!-- Finance Dropdown -->
         <div class="relative" @mouseenter="financeOpen=true" @mouseleave="financeOpen=false">
-          <button class="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition flex items-center gap-1 {{ request()->is('payments*') || request()->is('accounts*') || request()->is('payment-verification*') || request()->is('expenses*') ? 'bg-gray-100 text-gray-900 font-semibold' : '' }}">
+          <button class="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition flex items-center gap-1 {{ request()->is('payments*') || request()->is('accounts*') || request()->is('payment-verification*') || request()->is('expenses*') || request()->is('teacher-salaries*') ? 'bg-gray-100 text-gray-900 font-semibold' : '' }}">
             Finance
             <svg class="w-4 h-4 transition-transform" :class="{'rotate-180':financeOpen}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
           </button>
           <div x-show="financeOpen" x-transition class="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 w-52 py-2">
             <a href="/payments" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">Take Payment</a>
+            {{-- Defaulter List hidden (15/07/2026) — flip to true to restore --}}
+            @if(false)
             <a href="/payment-verification?search=&status=pending" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">Defaulter List</a>
+            @endif
             <a href="/accounts" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">Accounts Summary</a>
             <a href="/expenses" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">Expenses</a>
+            <a href="/teacher-salaries" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">Teacher Salaries</a>
             @if(config('reminders.enabled'))
               <a href="/payment-reminders" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900 flex items-center justify-between">
                 <span>Payment Reminders</span>
@@ -127,13 +131,14 @@
 
         <!-- Library Dropdown -->
         <div class="relative" @mouseenter="libraryOpen=true" @mouseleave="libraryOpen=false">
-          <button class="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition flex items-center gap-1 {{ request()->is('books*') ? 'bg-gray-100 text-gray-900 font-semibold' : '' }}">
+          <button class="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition flex items-center gap-1 {{ request()->is('books*') || request()->is('book-library*') ? 'bg-gray-100 text-gray-900 font-semibold' : '' }}">
             Library
             <svg class="w-4 h-4 transition-transform" :class="{'rotate-180':libraryOpen}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
           </button>
           <div x-show="libraryOpen" x-transition class="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 w-48 py-2">
             <a href="/books" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">View Books</a>
             <a href="/books/create" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">Add Books</a>
+            <a href="/book-library" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">Book Library</a>
           </div>
         </div>
 
@@ -176,9 +181,13 @@
     <div class="text-xs uppercase tracking-wider text-gray-400 px-2 mt-5 mb-2">Finance</div>
     <ul class="space-y-1 text-sm">
       <li><a href="/payments" class="block px-3 py-2 rounded hover:bg-gray-100 {{ request()->is('payments') ? 'active' : '' }}" @click="open=false">💳 Take Payment</a></li>
+      {{-- Defaulter List hidden (15/07/2026) — flip to true to restore --}}
+      @if(false)
       <li><a href="/defaulters" class="block px-3 py-2 rounded hover:bg-gray-100 {{ request()->is('defaulters') ? 'active' : '' }}" @click="open=false">⚠️ Defaulter List</a></li>
+      @endif
       <li><a href="/accounts" class="block px-3 py-2 rounded hover:bg-gray-100 {{ request()->is('accounts') ? 'active' : '' }}" @click="open=false">🧾 Accounts Summary</a></li>
       <li><a href="/expenses" class="block px-3 py-2 rounded hover:bg-gray-100 {{ request()->is('expenses') ? 'active' : '' }}" @click="open=false">💸 Expenses</a></li>
+      <li><a href="/teacher-salaries" class="block px-3 py-2 rounded hover:bg-gray-100 {{ request()->is('teacher-salaries*') ? 'active' : '' }}" @click="open=false">💰 Teacher Salaries</a></li>
       @if(config('reminders.enabled'))
       <li>
         <a href="/payment-reminders" class="flex items-center justify-between px-3 py-2 rounded hover:bg-gray-100 {{ request()->is('payment-reminders*') ? 'active' : '' }}" @click="open=false">

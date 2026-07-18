@@ -32,12 +32,18 @@
   <input name="ref" value="{{ old('ref', $ref ?? '') }}" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2" placeholder="Type to search...">
     </div>
     <div>
-      <label class="text-sm text-gray-600">From</label>
-  <input type="date" name="from" value="{{ old('from', $from ?? '') }}" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
+      <label class="text-sm text-gray-600">From <span class="text-red-500">*</span></label>
+  <input type="date" name="from" value="{{ old('from', $from ?? '') }}" required
+         oninvalid="this.setCustomValidity('Please select the From date — the range drives attendance and tuition figures.')"
+         oninput="this.setCustomValidity('')"
+         class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
     </div>
     <div>
-      <label class="text-sm text-gray-600">To</label>
-  <input type="date" name="to" value="{{ old('to', $to ?? '') }}" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
+      <label class="text-sm text-gray-600">To <span class="text-red-500">*</span></label>
+  <input type="date" name="to" value="{{ old('to', $to ?? '') }}" required
+         oninvalid="this.setCustomValidity('Please select the To date — the range drives attendance and tuition figures.')"
+         oninput="this.setCustomValidity('')"
+         class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
     </div>
     <div class="flex items-end">
       <button class="w-full px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Search</button>
@@ -61,8 +67,9 @@
             $siblings = \App\Models\Student::where('reference', $studentDetails['student']->reference)->get();
           @endphp
           @foreach($siblings as $sibling)
-            <div class="text-lg overflow-hidden text-ellipsis whitespace-nowrap" title="{{ $sibling->first_name }} {{ $sibling->last_name }}">
-              {{ $sibling->first_name }} {{ $sibling->last_name }}
+            <div class="text-lg overflow-hidden text-ellipsis whitespace-nowrap" title="{{ $sibling->first_name }} {{ $sibling->last_name }} — click for attendance">
+              <a href="#" onclick="openAttendanceModal({{ $sibling->id }}); return false;"
+                 class="text-blue-700 hover:underline cursor-pointer">{{ $sibling->first_name }} {{ $sibling->last_name }}</a>
             </div>
           @endforeach
         </div>
@@ -104,49 +111,17 @@
         </div>
       </div>
 
-      {{-- Middle Row: Add Pending Amount (Single Column) --}}
-      <div class="mb-4 pb-4 border-b border-blue-200">
-        <div class="max-w-lg">
-          <span class="text-blue-700 font-medium text-base">Amount:</span><br>
-          <div class="inline-flex items-center gap-2 mt-2">
-            <span class="text-xl font-bold text-orange-600">£</span>
-            <input type="number" id="pending-amount-input" value="0" 
-                   step="0.01" min="0" 
-                   class="w-32 px-3 py-2 border-2 border-orange-300 rounded-lg text-xl font-bold text-orange-600 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
-                   required>
-            
-            {{-- Add Button (existing) --}}
-            <form method="POST" action="{{ route('student.addPendingAmount', $studentDetails['student']->id) }}" class="inline">
-              @csrf
-              @method('PATCH')
-              <input type="hidden" name="amount_to_add" id="add-amount-hidden">
-              <button type="submit" 
-                      onclick="document.getElementById('add-amount-hidden').value = document.getElementById('pending-amount-input').value"
-                      class="px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition-colors">
-                ➕ Add
-              </button>
-            </form>
-            
-            {{-- Set Button (new) --}}
-            <form method="POST" action="{{ route('student.setPendingAmount', $studentDetails['student']->id) }}" class="inline">
-              @csrf
-              @method('PATCH')
-              <input type="hidden" name="amount_to_set" id="set-amount-hidden">
-              <button type="submit" 
-                      onclick="document.getElementById('set-amount-hidden').value = document.getElementById('pending-amount-input').value"
-                      class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
-                📌 Set
-              </button>
-            </form>
-          </div>
-          <div class="text-xs text-gray-600 mt-2 italic">
-            💡 <strong>Add:</strong> Adds to pending | <strong>Set:</strong> Resets to this amount
-          </div>
-        </div>
+      {{-- Combined attendance amount (DISPLAY ONLY — does not affect Payment Pending) --}}
+      <div class="mb-4 pb-4 border-b border-blue-200 text-sm">
+        <span class="text-blue-700 font-medium">Total Amount (Attendance × Hourly Rate):</span>
+        <span class="text-lg font-semibold text-purple-700 ml-2">£{{ number_format($studentDetails['attendance_total_amount'] ?? 0, 2) }}</span>
+        <span class="text-xs text-gray-500 ml-2">{{ ($from || $to) ? 'For selected date range' : 'All records — set a date range to narrow' }} · click a name for the breakdown</span>
       </div>
 
-      {{-- Bottom Row: Payment Summary in 3 columns --}}
-      <div class="grid md:grid-cols-3 gap-4 text-sm">
+      {{-- Pending amounts are now managed via "Payment Due" in the Record a Payment form below --}}
+
+      {{-- Bottom Row: Payment Summary --}}
+      <div class="grid md:grid-cols-4 gap-4 text-sm">
         <div>
           <span class="text-blue-700 font-medium">Total Payments Made:</span><br>
           <span class="text-lg font-semibold text-green-700">£{{ number_format($studentDetails['total_paid'], 2) }}</span>
@@ -155,7 +130,7 @@
           </div>
         </div>
         <div>
-          <span class="text-blue-700 font-medium">Payment Pending:</span><br>
+          <span class="text-blue-700 font-medium">Balance:</span><br>
           <span class="text-lg font-semibold {{ $studentDetails['payment_pending'] > 0 ? 'text-orange-600' : 'text-green-700' }}">
             £{{ number_format($studentDetails['payment_pending'], 2) }}
           </span>
@@ -168,12 +143,21 @@
           </div>
         </div>
         <div>
-          <span class="text-blue-700 font-medium">Book Payments Pending:</span><br>
+          <span class="text-blue-700 font-medium">Book Payments:</span><br>
           <span class="text-lg font-semibold {{ $studentDetails['book_payments_pending'] > 0 ? 'text-orange-600' : 'text-green-700' }}">
             £{{ number_format($studentDetails['book_payments_pending'], 2) }}
           </span>
           <div class="text-xs text-blue-600 mt-1">
             Total books value: £{{ number_format($studentDetails['total_book_price'], 2) }}
+          </div>
+        </div>
+        <div>
+          <span class="text-blue-700 font-medium">Credit:</span><br>
+          <span class="text-lg font-semibold {{ ($studentDetails['credit_balance'] ?? 0) > 0 ? 'text-blue-700' : 'text-gray-700' }}">
+            £{{ number_format($studentDetails['credit_balance'] ?? 0, 2) }}
+          </span>
+          <div class="text-xs text-blue-600 mt-1">
+            Available credit
           </div>
         </div>
       </div>
@@ -259,6 +243,84 @@
           @endif
         </div>
       @endif
+
+      {{-- Attendance popup (DISPLAY ONLY) --}}
+      <div id="attendanceModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
+          <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-2xl font-bold text-gray-800"><span id="att_name"></span> — Attendance</h2>
+              <button onclick="closeAttendanceModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            </div>
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 text-sm grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div><span class="text-gray-600">Present:</span> <span class="font-semibold" id="att_present"></span></div>
+              <div><span class="text-gray-600">Total hours:</span> <span class="font-semibold" id="att_hours"></span></div>
+              <div><span class="text-gray-600">Hourly rate:</span> <span class="font-semibold" id="att_rate"></span></div>
+              <div><span class="text-gray-600">Amount:</span> <span class="font-semibold text-purple-700" id="att_amount"></span></div>
+            </div>
+            <div class="text-xs text-gray-500 mb-2" id="att_period"></div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="bg-gray-50 border-b text-left">
+                    <th class="p-2">Date</th><th class="p-2">Time slot</th><th class="p-2">Subject</th><th class="p-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="attendanceRows"></tbody>
+              </table>
+            </div>
+            <div class="flex justify-end mt-4">
+              <button type="button" onclick="closeAttendanceModal()" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        const attendanceData = @json($studentDetails['attendance_summary'] ?? []);
+        const attendancePeriod = @json(($from || $to) ? (($from ?: '…') . ' to ' . ($to ?: '…')) : 'All records');
+
+        function openAttendanceModal(studentId) {
+          const d = attendanceData[studentId];
+          if (!d) return;
+          document.getElementById('att_name').textContent = d.name || '';
+          document.getElementById('att_present').textContent = d.present;
+          document.getElementById('att_hours').textContent = d.hours + ' hrs';
+          document.getElementById('att_rate').textContent = (d.rate === null || d.rate === undefined) ? 'Not set' : ('£' + Number(d.rate).toFixed(2));
+          document.getElementById('att_amount').textContent = (d.amount === null || d.amount === undefined) ? '—' : ('£' + Number(d.amount).toFixed(2));
+          document.getElementById('att_period').textContent = 'Period: ' + attendancePeriod;
+
+          const tbody = document.getElementById('attendanceRows');
+          tbody.innerHTML = '';
+          if (!d.records || d.records.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">No attendance records in this range.</td></tr>';
+          } else {
+            d.records.forEach(function (r) {
+              const present = r.status === 'present';
+              const pill = '<span class="px-2 py-0.5 text-xs font-semibold rounded-full ' +
+                (present ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') + '">' +
+                (present ? 'Present' : 'Absent') + '</span>';
+              const tr = document.createElement('tr');
+              tr.className = 'border-b';
+              tr.innerHTML = '<td class="p-2">' + r.date + '</td><td class="p-2">' + r.time +
+                '</td><td class="p-2">' + r.subject + '</td><td class="p-2">' + pill + '</td>';
+              tbody.appendChild(tr);
+            });
+          }
+          document.getElementById('attendanceModal').classList.remove('hidden');
+        }
+
+        function closeAttendanceModal() {
+          document.getElementById('attendanceModal').classList.add('hidden');
+        }
+
+        document.getElementById('attendanceModal').addEventListener('click', function (e) {
+          if (e.target === this) closeAttendanceModal();
+        });
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape') closeAttendanceModal();
+        });
+      </script>
     </div>
   @endif
 
@@ -266,6 +328,15 @@
   <div class="p-4 rounded-xl border bg-white mb-6">
     <h2 class="font-semibold mb-3">Record a Payment</h2>
     @if(session('ok')) <div class="mb-3 text-sm text-emerald-700">{{ session('ok') }}</div> @endif
+    @if($errors->any())
+      <div class="mb-3 p-3 rounded bg-red-50 border border-red-200 text-red-700 text-sm">
+        <ul class="list-disc list-inside">
+          @foreach($errors->all() as $e)
+            <li>{{ $e }}</li>
+          @endforeach
+        </ul>
+      </div>
+    @endif
     @php $students = $students ?? collect(); @endphp
     <form method="POST" action="{{ route('payments.store') }}" class="grid md:grid-cols-6 gap-3">
       @csrf
@@ -284,8 +355,12 @@
         @endif
       </div>
       <div class="md:col-span-1">
-        <label class="text-sm text-gray-600">Amount (£)*</label>
-        <input name="amount" type="number" step="0.01" min="0" value="{{ old('amount') }}" required class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
+        <label class="text-sm text-gray-600">Payment Due (£)</label>
+        <input name="payment_due" type="number" step="0.01" min="0" value="{{ old('payment_due') }}" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2" placeholder="0.00">
+      </div>
+      <div class="md:col-span-1">
+        <label class="text-sm text-gray-600">Payment Made (£)</label>
+        <input name="amount" type="number" step="0.01" min="0" value="{{ old('amount') }}" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2" placeholder="0.00">
       </div>
       <div class="md:col-span-1">
         <label class="text-sm text-gray-600">Method</label>
@@ -307,21 +382,24 @@
         </select>
       </div>
       @endif
-      <div class="md:col-span-1">
+      <div class="md:col-span-2">
         <label class="text-sm text-gray-600">Paid at</label>
         <input type="date" name="paid_at" value="{{ old('paid_at', date('Y-m-d')) }}" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
       </div>
-      <div class="md:col-span-3">
+      <div class="md:col-span-2">
         <label class="text-sm text-gray-600">Payment Period From</label>
         <input type="date" name="period_from" value="{{ old('period_from', date('Y-m-d')) }}" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
       </div>
-      <div class="md:col-span-3">
+      <div class="md:col-span-2">
         <label class="text-sm text-gray-600">Payment Period To</label>
         <input type="date" name="period_to" value="{{ old('period_to', date('Y-m-d', strtotime('+1 week'))) }}" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
       </div>
       <div class="md:col-span-6">
         <label class="text-sm text-gray-600">Notes</label>
         <textarea name="notes" rows="2" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2" placeholder="Add payment notes...">{{ old('notes') }}</textarea>
+      </div>
+      <div class="md:col-span-6 text-xs text-gray-500">
+        💡 <strong>Payment Due</strong> adds to the family's outstanding balance · <strong>Payment Made</strong> records money received — fill either or both. Overpayments become credit and are applied to future dues automatically.
       </div>
       <div class="md:col-span-6">
         <button class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Add Payment</button>

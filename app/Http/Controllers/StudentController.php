@@ -78,7 +78,8 @@ class StudentController extends Controller
             'last_name'         => 'required|string|max:100',
             'gender'            => 'nullable|in:male,female,other',
             'dob'               => 'nullable|date',
-            'year'              => 'nullable|integer|min:1|max:16',
+            'year'              => 'nullable|integer|min:1|max:30',
+            'hourly_rate'       => 'nullable|numeric|min:0',
             'city'              => 'nullable|string|max:120',
             'enroll_date'       => 'nullable|date',
             'start_date'        => 'nullable|date',
@@ -93,7 +94,8 @@ class StudentController extends Controller
             'siblings.*.last_name'          => 'nullable|string|max:100',
             'siblings.*.gender'             => 'nullable|in:male,female,other',
             'siblings.*.dob'                => 'nullable|date',
-            'siblings.*.year'               => 'nullable|integer|min:1|max:16',
+            'siblings.*.year'               => 'nullable|integer|min:1|max:30',
+            'siblings.*.hourly_rate'        => 'nullable|numeric|min:0',
         ]);
 
         // trim/cap guardian post_code (multibyte safe)
@@ -168,6 +170,7 @@ class StudentController extends Controller
             'gender'      => $admission['gender'] ?? null,
             'dob'         => $admission['dob'] ?? null,
             'year'        => $admission['year'] ?? null,
+            'hourly_rate' => $admission['hourly_rate'] ?? null,
             'guardian_city' => $admission['guardian_city'] ?? null,
             'city'        => $admission['guardian_city'] ?? null, // Map guardian_city to city as well
             'enroll_date' => $admission['enroll_date'] ?? null,
@@ -197,6 +200,7 @@ class StudentController extends Controller
                 'gender'     => $sib['gender'] ?? null,
                 'dob'        => $sib['dob'] ?? null,
                 'year'       => $sib['year'] ?? null,
+                'hourly_rate' => $sib['hourly_rate'] ?? null,
             ] + $guardian;
 
             // skip fully empty names
@@ -432,7 +436,8 @@ class StudentController extends Controller
             'students.*.first_name' => 'required|string|max:255',
             'students.*.last_name' => 'required|string|max:255',
             'students.*.dob' => 'nullable|date',
-            'students.*.year' => 'nullable|integer|min:1|max:16',
+            'students.*.year' => 'nullable|integer|min:1|max:30',
+            'students.*.hourly_rate' => 'nullable|numeric|min:0',
             'students.*.gender' => 'nullable|string',
             'students.*.guardian_name' => 'nullable|string|max:255',
             'students.*.guardian_relation' => 'nullable|string|max:255',
@@ -545,21 +550,17 @@ class StudentController extends Controller
                 // Update existing student
                 $student = Student::find($studentData['id']);
                 if ($student) {
-                    $student->update([
+                    // Guardian details always come from the primary student's submitted
+                    // values ($guardianData) so an edit syncs them to every sibling —
+                    // the per-sibling hidden inputs carry stale page-load copies
+                    $student->update(array_merge([
                         'first_name' => $studentData['first_name'] ?? null,
                         'last_name' => $studentData['last_name'] ?? null,
                         'dob' => $studentData['dob'] ?? null,
                         'year' => $studentData['year'] ?? null,
+                        'hourly_rate' => $studentData['hourly_rate'] ?? null,
                         'gender' => $studentData['gender'] ?? null,
-                        'guardian_name' => $studentData['guardian_name'] ?? null,
-                        'guardian_relation' => $studentData['guardian_relation'] ?? null,
-                        'guardian_phone' => $studentData['guardian_phone'] ?? null,
-                        'guardian_email' => $studentData['guardian_email'] ?? null,
-                        'guardian_address' => $studentData['guardian_address'] ?? null,
-                        'guardian_city' => $studentData['guardian_city'] ?? null,
-                        'guardian_notes' => $studentData['guardian_notes'] ?? null,
                         'city' => $studentData['city'] ?? null,
-                        'post_code' => $studentData['post_code'] ?? null,
                         'notes' => $studentData['notes'] ?? null,
                         'enroll_date' => $studentData['enroll_date'] ?? null,
                         'start_date' => $studentData['start_date'] ?? null,
@@ -567,7 +568,7 @@ class StudentController extends Controller
                         'deposit_paid' => $studentData['deposit_paid'] ?? 0,
                         'fee_amount' => $studentData['fee_amount'] ?? 0,
                         'period' => $studentData['period'] ?? $period,
-                    ]);
+                    ], $guardianData));
                     $processedStudents[] = $student;
                 }
             } else {
@@ -579,6 +580,7 @@ class StudentController extends Controller
                     'gender' => $studentData['gender'] ?? null,
                     'dob' => $studentData['dob'] ?? null,
                     'year' => $studentData['year'] ?? null,
+                    'hourly_rate' => $studentData['hourly_rate'] ?? null,
                     'period' => $studentData['period'] ?? $period,
                 ] + $guardianData;
 

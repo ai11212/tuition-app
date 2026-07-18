@@ -28,7 +28,10 @@ class ReferenceProfileController extends Controller {
         if ($r->filled('dob')) {
             $query->where('dob', $r->dob);
         }
-        
+        if ($r->filled('year')) {
+            $query->where('year', $r->year);
+        }
+
         $students = $query->get();
         
         // No results
@@ -57,33 +60,10 @@ class ReferenceProfileController extends Controller {
             ];
         });
         
-        // Calculate payment details (same logic as PaymentController)
-        $totalPaid = PaymentTransaction::leftJoin('invoices', 'payment_transactions.invoice_id', '=', 'invoices.id')
-            ->where('invoices.student_id', $student->id)
-            ->sum('payment_transactions.amount');
-        
-        // Get assigned books - Note: student_reference stores student ID, not reference string
-        $assignedBooks = Book::leftJoin('students', 'books.student_reference', '=', 'students.id')
-            ->where('students.reference', $student->reference)
-            ->select('books.*')
-            ->get();
-        
-        $studentSubjects = Timetable::where('student_id', $student->id)->pluck('subject')->unique();
-        $subjectBooks = Book::whereNull('student_reference')->whereIn('subject', $studentSubjects)->get();
-        $totalBookPrice = $assignedBooks->sum('price') + $subjectBooks->sum('price');
-        
-        $paymentsForBooks = max(0, $totalPaid - ($student->deposit ?? 0));
-        $bookPaymentsPending = max(0, $totalBookPrice - $paymentsForBooks);
-        $expectedTotal = ($student->payment ?? 0) + $totalBookPrice;
-        $paymentPending = max(0, $expectedTotal - $totalPaid);
-        
-        $paymentDetails = [
-            'total_paid' => $totalPaid,
-            'expected_total' => $expectedTotal,
-            'payment_pending' => $paymentPending,
-            'book_payments_pending' => $bookPaymentsPending,
-            'total_book_price' => $totalBookPrice
-        ];
+        // Payment summary — SHARED source of truth (App\Support\PaymentSummary),
+        // guaranteed identical to the Finance → Payments page. The old inline
+        // copy here omitted pending_amount, which made Payment Pending wrong.
+        $paymentDetails = \App\Support\PaymentSummary::forStudent($student);
         
         return view('ref.profile', compact('student', 'allSiblings', 'siblingsWithTimetables', 'paymentDetails'));
     }

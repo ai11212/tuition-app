@@ -7,6 +7,7 @@
 <input name="subject" class="border p-2" placeholder="Subject" value="{{ $book->subject }}" required>
 <input name="title" class="border p-2" placeholder="Book Title" value="{{ $book->title }}" required>
 <input name="price" class="border p-2" placeholder="Price" step="0.01" type="number" value="{{ $book->price }}" required>
+<input name="issue_date" class="border p-2" type="date" value="{{ old('issue_date', ($book->issue_date ?? $book->created_at)->format('Y-m-d')) }}" max="{{ date('Y-m-d') }}" required>
 @if(Schema::hasColumn('books', 'student_reference'))
 <input name="student_reference" class="border p-2" placeholder="Student Reference (Optional)" value="{{ $book->student_reference ?? '' }}">
 <div class="text-sm text-gray-600">Leave student reference empty for general books available to all students with matching subjects</div>

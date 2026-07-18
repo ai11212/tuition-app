@@ -149,7 +149,7 @@ class PaymentController extends Controller
                 $totalBookPrice = $books->sum('price');
                 
                 // Get latest book creation date for smart detection
-                $latestBookDate = $assignedBooks->count() > 0 ? $assignedBooks->max('created_at') : null;
+                $latestBookDate = $assignedBooks->count() > 0 ? ($assignedBooks->max('issue_date') ?? $assignedBooks->max('created_at')) : null;
                 
                 // If no books found by either method, try alternative matching
                 if ($books->count() == 0) {
@@ -191,10 +191,15 @@ class PaymentController extends Controller
                     $unpaidBooks = $assignedBooks;
                     $showBooks = $assignedBooks->count() > 0;
                 } else {
-                    // Filter books: show only those created AFTER the last payment
+                    // Filter books: show only those issued AFTER the last payment
                     $unpaidBooks = $assignedBooks->filter(function($book) use ($latestPaymentDate) {
-                        if (!$book->created_at) return false;
-                        return strtotime($book->created_at) > strtotime($latestPaymentDate);
+                        $issued = $book->issue_date ?? $book->created_at;
+                        if (!$issued) return false;
+                        $issuedDay = $issued->format('Y-m-d');
+                        $paymentDay = date('Y-m-d', strtotime($latestPaymentDate));
+                        if ($issuedDay !== $paymentDay) return $issuedDay > $paymentDay;
+                        // Issued same day as the last payment: fall back to precise entry time
+                        return $book->created_at && strtotime($book->created_at) > strtotime($latestPaymentDate);
                     });
                     $showBooks = $unpaidBooks->count() > 0;
                 }
@@ -221,18 +226,68 @@ class PaymentController extends Controller
                     'latest_payment_date' => $latestPaymentDate,
                     'latest_book_date' => $latestBookDate
                 ];
+
+                // Credit balance: overpayment surplus, computed — the formula already
+                // offsets it against future dues automatically
+                $studentDetails['credit_balance'] = max(0, $totalPaid - $expectedTotal);
+
+                // --- Attendance summary for the Student Info popup (DISPLAY ONLY;
+                // --- does NOT affect Payment Pending or any existing calculation) ---
+                $familyStudents = Student::where('reference', $exactStudent->reference)->orderBy('id')->get();
+                $attendanceSummary = [];
+                $attendanceTotalAmount = 0;
+                foreach ($familyStudents as $fs) {
+                    $presentCount = \App\Models\StudentAttendance::where('student_id', $fs->id)
+                        ->where('status', 'present')
+                        ->when($from, fn($q) => $q->whereDate('date', '>=', $from))
+                        ->when($to,   fn($q) => $q->whereDate('date', '<=', $to))
+                        ->count();
+                    $hours  = $presentCount * 2;
+                    $rate   = $fs->hourly_rate; // nullable
+                    $amount = $rate !== null ? $hours * (float) $rate : null;
+                    if ($amount !== null) $attendanceTotalAmount += $amount;
+
+                    $records = \App\Models\StudentAttendance::where('student_id', $fs->id)
+                        ->when($from, fn($q) => $q->whereDate('date', '>=', $from))
+                        ->when($to,   fn($q) => $q->whereDate('date', '<=', $to))
+                        ->orderBy('date', 'desc')->limit(300)
+                        ->get(['date','time','subject','teacher','status'])
+                        ->map(fn($a) => [
+                            'date'    => \Carbon\Carbon::parse($a->date)->format('d/m/Y'),
+                            'time'    => $a->time ?: '-',
+                            'subject' => $a->subject ?: '-',
+                            'teacher' => $a->teacher ?: '-',
+                            'status'  => $a->status,
+                        ])->values();
+
+                    $attendanceSummary[$fs->id] = [
+                        'name'    => trim($fs->first_name.' '.$fs->last_name),
+                        'present' => $presentCount,
+                        'hours'   => $hours,
+                        'rate'    => $rate,
+                        'amount'  => $amount,
+                        'records' => $records,
+                    ];
+                }
+                $studentDetails['attendance_summary'] = $attendanceSummary;
+                $studentDetails['attendance_total_amount'] = $attendanceTotalAmount;
             }
         }
 
         return view('finance.payments', compact('ref','from','to','payments','students','studentDetails'));
     }
 
-    /** Store a payment */
+    /** Store a payment and/or add a payment due (two-field workflow) */
     public function store(Request $r){
+        // Blank/zero fields count as "not provided"
+        if ((float) $r->input('payment_due', 0) <= 0) $r->merge(['payment_due' => null]);
+        if ((float) $r->input('amount', 0) <= 0) $r->merge(['amount' => null]);
+
         $data = $r->validate([
             'reference'   => 'required|string',
-            'amount'      => 'required|numeric|min:0.01',
-            'method'      => 'required|string', // Cash|Card|Bank
+            'payment_due' => 'nullable|numeric|min:0.01',
+            'amount'      => 'nullable|numeric|min:0.01|required_without:payment_due',
+            'method'      => 'nullable|required_with:amount|string', // Cash|Card|Bank
             'purpose'     => 'nullable|string|in:tuition,books,deposit,other',
             'paid_at'     => 'nullable|date',
             'period_from' => 'nullable|date',
@@ -240,6 +295,29 @@ class PaymentController extends Controller
             'notes'       => 'nullable|string',
         ]);
         $student = Student::where('reference',$data['reference'])->firstOrFail();
+
+        // Payment Due: raises the family's fee base (same semantics as the old
+        // Add button). Any credit from earlier overpayment offsets it automatically,
+        // because Payment Pending = max(0, expected − paid).
+        if (!empty($data['payment_due'])) {
+            $student->update([
+                'pending_amount' => ($student->pending_amount ?? $student->payment ?? 0) + $data['payment_due'],
+            ]);
+            $student->refresh();
+        }
+
+        // Due-only submission: nothing was paid, so no invoice/transaction
+        if (empty($data['amount'])) {
+            $expected = $this->expectedForStudent($student);
+            $paid = $this->paidForStudent($student);
+            $outstanding = max(0, $expected - $paid);
+            $credit = max(0, $paid - $expected);
+
+            return redirect()->route('payments', ['ref' => $data['reference']])
+                ->with('ok', 'Payment due of £' . number_format($data['payment_due'], 2)
+                    . ' added. Outstanding now: £' . number_format($outstanding, 2)
+                    . ($credit > 0 ? ' · Credit balance: £' . number_format($credit, 2) : ''));
+        }
 
         // Use provided period dates or default to current date
         $periodFrom = $data['period_from'] ?? now()->toDateString();
@@ -273,7 +351,7 @@ class PaymentController extends Controller
         
         $transactionData = [
             'invoice_id' => $inv->id,
-            'paid_on'    => $data['paid_at'] ? date('Y-m-d', strtotime($data['paid_at'])) : now()->toDateString(),
+            'paid_on'    => !empty($data['paid_at']) ? date('Y-m-d', strtotime($data['paid_at'])) : now()->toDateString(),
             'paid_at'    => $paidAtValue,
             'amount'     => $data['amount'],
             'method'     => $data['method'],
@@ -287,8 +365,24 @@ class PaymentController extends Controller
         
         PaymentTransaction::create($transactionData);
 
+        // Snapshot the remaining balance onto this invoice so reprints always
+        // show the balance as of this payment (invoice.blade.php reads it)
+        $inv->update(['balance' => max(0, $this->expectedForStudent($student) - $this->paidForStudent($student))]);
+
         // After creating an invoice+transaction, redirect to the invoice print page
         return redirect()->route('invoice.print', $inv->id);
+    }
+
+    /** Expected total for a student — delegates to the shared source of truth */
+    private function expectedForStudent(Student $student): float
+    {
+        return \App\Support\PaymentSummary::expectedTotal($student);
+    }
+
+    /** Total paid across the student's invoices — shared source of truth */
+    private function paidForStudent(Student $student): float
+    {
+        return \App\Support\PaymentSummary::totalPaid($student);
     }
 
     /** CSV export using current filters */
@@ -422,6 +516,23 @@ class PaymentController extends Controller
         $outTotal = class_exists(Expense::class)
             ? Expense::whereBetween('expense_on',[$from,$to])->sum('amount') : 0;
 
+        // Money Out breakdown by payment method (display only — outTotal unchanged)
+        $outBreakdown = ['cash' => 0, 'card' => 0, 'bank' => 0];
+        if (class_exists(Expense::class)) {
+            $outBreakdown = [
+                'cash' => Expense::whereBetween('expense_on',[$from,$to])->where('method','Cash')->sum('amount'),
+                'card' => Expense::whereBetween('expense_on',[$from,$to])->where('method','Card')->sum('amount'),
+                'bank' => Expense::whereBetween('expense_on',[$from,$to])->whereIn('method',['Bank','Transfer'])->sum('amount'),
+            ];
+        }
+
+        // Net breakdown per method (display only — derived from the two lines above)
+        $netBreakdown = [
+            'cash' => $inCash - $outBreakdown['cash'],
+            'card' => $inCard - $outBreakdown['card'],
+            'bank' => $inBank - $outBreakdown['bank'],
+        ];
+
         // Expense breakdown by category
         $expensesByCategory = [];
         if (class_exists(Expense::class)) {
@@ -448,7 +559,7 @@ class PaymentController extends Controller
         $breakdown   = ['cash'=>$inCash,'card'=>$inCard,'bank'=>$inBank];
 
         return view('finance.summary', compact(
-            'from','to','inTotal','outTotal','net','breakdown','paymentBreakdown','expensesByCategory','daily','weekly','monthly','invoices','outstanding'
+            'from','to','inTotal','outTotal','net','breakdown','outBreakdown','netBreakdown','paymentBreakdown','expensesByCategory','daily','weekly','monthly','invoices','outstanding'
         ));
     }
 
@@ -489,11 +600,30 @@ class PaymentController extends Controller
             
             $payment->update($paymentData);
             
+            // Re-snapshot this invoice's balance: expected minus payments up to
+            // and including this (now-edited) payment, in chronological order
+            $balance = 0;
+            $invStudent = Student::find($payment->invoice->student_id);
+            if ($invStudent) {
+                $paidThrough = PaymentTransaction::leftJoin('invoices', 'payment_transactions.invoice_id', '=', 'invoices.id')
+                    ->where('invoices.student_id', $invStudent->id)
+                    ->where(function ($q) use ($payment) {
+                        $q->where('payment_transactions.paid_on', '<', $payment->paid_on)
+                          ->orWhere(function ($qq) use ($payment) {
+                              $qq->where('payment_transactions.paid_on', $payment->paid_on)
+                                 ->where('payment_transactions.id', '<=', $payment->id);
+                          });
+                    })
+                    ->sum('payment_transactions.amount');
+                $balance = max(0, $this->expectedForStudent($invStudent) - $paidThrough);
+            }
+
             // Update related invoice
             $payment->invoice->update([
                 'amount'      => $data['amount'],
                 'period_from' => $data['period_from'] ?? $payment->invoice->period_from,
                 'period_to'   => $data['period_to'] ?? $payment->invoice->period_to,
+                'balance'     => $balance,
             ]);
             
             DB::commit();
@@ -547,7 +677,11 @@ class PaymentController extends Controller
             'pending_amount' => $request->pending_amount
         ]);
 
-        return redirect()->back()->with('success', 'Pending amount updated successfully.');
+        $outstanding = max(0, $this->expectedForStudent($student) - $this->paidForStudent($student));
+
+        return redirect()->back()->with('success',
+            "Fee updated to £" . number_format($student->pending_amount, 2)
+            . " · Outstanding now: £" . number_format($outstanding, 2));
     }
 
     /**
@@ -567,7 +701,11 @@ class PaymentController extends Controller
             'pending_amount' => $newPending
         ]);
 
-        return redirect()->back()->with('success', "Added £" . number_format($amountToAdd, 2) . ". New pending: £" . number_format($newPending, 2));
+        $outstanding = max(0, $this->expectedForStudent($student) - $this->paidForStudent($student));
+
+        return redirect()->back()->with('success',
+            "Added £" . number_format($amountToAdd, 2) . " to the fee. Total fee: £" . number_format($newPending, 2)
+            . " · Outstanding now: £" . number_format($outstanding, 2));
     }
 
     /**
@@ -585,6 +723,10 @@ class PaymentController extends Controller
             'pending_amount' => $amountToSet
         ]);
 
-        return redirect()->back()->with('success', "Pending amount set to £" . number_format($amountToSet, 2));
+        $outstanding = max(0, $this->expectedForStudent($student) - $this->paidForStudent($student));
+
+        return redirect()->back()->with('success',
+            "Fee set to £" . number_format($amountToSet, 2)
+            . " · Outstanding now: £" . number_format($outstanding, 2));
     }
 }

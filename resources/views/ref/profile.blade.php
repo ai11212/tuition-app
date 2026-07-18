@@ -47,7 +47,7 @@
   @if(isset($paymentDetails))
   <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
     <h2 class="text-lg font-semibold mb-4 text-blue-700">Payment Status</h2>
-    <div class="grid md:grid-cols-4 gap-4">
+    <div class="grid md:grid-cols-5 gap-4">
       <div class="bg-blue-50 p-4 rounded">
         <div class="text-sm text-blue-700 font-medium mb-1">Total Payments Made</div>
         <div class="text-2xl font-bold text-blue-900">£{{ number_format($paymentDetails['total_paid'], 2) }}</div>
@@ -62,6 +62,11 @@
         <div class="text-sm text-green-700 font-medium mb-1">Book Payments Pending</div>
         <div class="text-2xl font-bold text-green-900">£{{ number_format($paymentDetails['book_payments_pending'], 2) }}</div>
         <div class="text-xs text-green-600 mt-1">Total books value: £{{ number_format($paymentDetails['total_book_price'], 2) }}</div>
+      </div>
+      <div class="bg-indigo-50 p-4 rounded">
+        <div class="text-sm text-indigo-700 font-medium mb-1">Credit Balance</div>
+        <div class="text-2xl font-bold text-indigo-900">£{{ number_format($paymentDetails['credit_balance'] ?? 0, 2) }}</div>
+        <div class="text-xs text-indigo-600 mt-1">Available credit</div>
       </div>
       <div class="bg-purple-50 p-4 rounded flex items-center justify-center">
         <a href="{{ route('payments', ['reference' => $student->reference]) }}" 

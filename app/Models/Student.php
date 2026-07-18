@@ -8,7 +8,7 @@ class Student extends Model
 {
     protected $fillable = [
         'reference',
-        'first_name','last_name','gender','dob','year',
+        'first_name','last_name','gender','dob','year','hourly_rate',
         'guardian_name','guardian_relation','guardian_phone','guardian_email','guardian_address',
         'guardian_city','guardian_notes',
         'post_code',

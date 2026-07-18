@@ -8,6 +8,8 @@
     <tr class="bg-gray-50 border-b">
       <th class="p-3 text-left">Reference</th>
       <th class="p-3 text-left">Name</th>
+      <th class="p-3 text-left">Phone Number</th>
+      <th class="p-3 text-left">Year</th>
       <th class="p-3 text-left">Date of Birth</th>
       <th class="p-3 text-left">Guardian</th>
       <th class="p-3 text-center">Action</th>
@@ -18,6 +20,14 @@
     <tr class="border-b hover:bg-gray-50">
       <td class="p-3">{{ $s->reference }}</td>
       <td class="p-3">{{ $s->first_name }} {{ $s->last_name }}</td>
+      <td class="p-3 whitespace-nowrap">
+        @if($s->guardian_phone)
+          <a href="tel:{{ $s->guardian_phone }}" class="text-blue-600 hover:underline">{{ $s->guardian_phone }}</a>
+        @else
+          -
+        @endif
+      </td>
+      <td class="p-3">{{ $s->year ?? '-' }}</td>
       <td class="p-3">{{ $s->dob ? \Carbon\Carbon::parse($s->dob)->format('d/m/Y') : '-' }}</td>
       <td class="p-3">{{ $s->guardian_name ?? '-' }}</td>
       <td class="p-3 text-center">

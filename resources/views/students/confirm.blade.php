@@ -15,11 +15,13 @@
     </div>
   @endif
   
-    {{-- DEBUG: show raw admission payload for troubleshooting --}}
+    {{-- DEBUG payload dump hidden (15/07/2026) — flip to true to restore for troubleshooting --}}
+    @if(false)
     <div class="alert alert-secondary">
       <strong>Debug: admission payload</strong>
       <pre style="white-space:pre-wrap;word-break:break-word">{{ json_encode($admission ?? [], JSON_PRETTY_PRINT) }}</pre>
     </div>
+    @endif
 
   @php
     $a = $admission ?? [];
@@ -66,6 +68,9 @@
           @if(!empty($student['year']))
           <div><strong>Year:</strong> {{ $student['year'] }}</div>
           @endif
+          @if(!empty($student['hourly_rate']))
+          <div><strong>Hourly Rate:</strong> {{ $student['hourly_rate'] }}</div>
+          @endif
           @if($idx == 0)
             <div><strong>Enroll date:</strong> {{ $student['enroll_date'] ?? '' }}</div>
             <div><strong>Start date:</strong> {{ $student['start_date'] ?? '' }}</div>
@@ -88,6 +93,9 @@
         @if(!empty($a['year']))
         <div><strong>Year:</strong> {{ $a['year'] }}</div>
         @endif
+        @if(!empty($a['hourly_rate']))
+        <div><strong>Hourly Rate:</strong> {{ $a['hourly_rate'] }}</div>
+        @endif
         <div><strong>Enroll date:</strong> {{ $a['enroll_date'] ?? '' }}</div>
         <div><strong>Start date:</strong> {{ $a['start_date'] ?? '' }}</div>
         <div><strong>Deposit:</strong> {{ $a['deposit'] ?? '' }}</div>
@@ -106,6 +114,9 @@
             <div><strong>DOB:</strong> {{ $s['dob'] ?? '' }}</div>
             @if(!empty($s['year']))
             <div><strong>Year:</strong> {{ $s['year'] }}</div>
+            @endif
+            @if(!empty($s['hourly_rate']))
+            <div><strong>Hourly Rate:</strong> {{ $s['hourly_rate'] }}</div>
             @endif
           </div>
         </div>

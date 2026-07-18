@@ -149,7 +149,7 @@
 </head>
 <body>
     <div class="action-buttons">
-        <a href="{{ route('payments') }}" class="btn btn-back">← Back to Payments</a>
+        <a href="{{ route('payments', ['ref' => optional($invoice->student)->reference]) }}" class="btn btn-back">← Back to Payments</a>
         <button onclick="window.print()" class="btn btn-print">🖨️ Print Invoice</button>
     </div>
     <div class="invoice-container">
@@ -208,37 +208,16 @@
         </div>
 
         @php
-            // Calculate overall balance (same logic as payment page)
-            $student = $invoice->student;
-            
-            // Get total paid via JOIN (same as PaymentController)
-            $totalPaid = \App\Models\PaymentTransaction::leftJoin('invoices', 'payment_transactions.invoice_id', '=', 'invoices.id')
-                ->where('invoices.student_id', $student->id)
-                ->sum('payment_transactions.amount');
-            
-            // Get books - NOTE: student_reference now stores student ID, not reference string
-            $assignedBooks = \App\Models\Book::leftJoin('students', 'books.student_reference', '=', 'students.id')
-                ->where('students.reference', $student->reference)
-                ->select('books.*')
-                ->get();
-            
-            $studentSubjects = \App\Models\Timetable::where('student_id', $student->id)->pluck('subject')->unique();
-            $subjectBooks = \App\Models\Book::whereNull('student_reference')->whereIn('subject', $studentSubjects)->get();
-            $totalBookPrice = $assignedBooks->sum('price') + $subjectBooks->sum('price');
-            
-            // Calculate balance (Expected - Paid) - This matches "Payment Pending" on payment page
-            // Use pending_amount if set, otherwise fall back to payment
-            $expectedTotal = ($student->pending_amount ?? $student->payment ?? 0) + $totalBookPrice;
-            $balanceDue = max(0, $expectedTotal - $totalPaid);
-            
-            // For this invoice
+            // Per-invoice totals only — the remaining balance is the SNAPSHOT
+            // stored on the invoice when its payment was taken (invoices.balance),
+            // so reprinting an old invoice never shows today's figures
             $invoicePaid = $invoice->transactions->sum('amount');
         @endphp
 
-        <!-- Balance Amount (only if pending) - Shows same as "Payment Pending" on payment page -->
-        @if($balanceDue > 0)
+        <!-- Balance Amount (snapshot at the time of this payment) -->
+        @if($invoice->balance > 0)
         <div class="amount-total" style="background: transparent; border: none; padding: 10px 15px; font-size: 16px; font-weight: normal;">
-            Balance Amount: £{{ number_format($balanceDue, 2) }}
+            Balance Amount: £{{ number_format($invoice->balance, 2) }}
         </div>
         @endif
 

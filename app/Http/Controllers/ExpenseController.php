@@ -43,6 +43,7 @@ class ExpenseController extends Controller {
         // Category list for dropdown
         $categories = [
             'Salary',
+            'Teacher Salary',
             'Rent',
             'Utilities',
             'Supplies',
@@ -73,11 +74,38 @@ class ExpenseController extends Controller {
         $data['type'] = $data['type'] ?? 'expense';
         
         Expense::create($data);
-        
+
         return redirect()->route('expenses')
             ->with('success', 'Expense added successfully!');
     }
-    
+
+    /**
+     * Update an existing expense (same rules as store)
+     */
+    public function update(Request $r, $id)
+    {
+        $data = $r->validate([
+            'expense_on' => 'required|date',
+            'amount'     => 'required|numeric|min:0.01',
+            'method'     => 'required|string', // Cash | Card | Bank
+            'type'       => 'nullable|string|in:expense,refund',
+            'category'   => 'required|string|max:50',
+            'notes'      => 'nullable|string|max:255',
+        ]);
+
+        $data['type'] = $data['type'] ?? 'expense';
+
+        try {
+            Expense::findOrFail($id)->update($data);
+
+            return redirect()->route('expenses')
+                ->with('success', 'Expense updated successfully!');
+        } catch (\Exception $e) {
+            return redirect()->route('expenses')
+                ->with('error', 'Failed to update expense.');
+        }
+    }
+
     /**
      * Delete an expense
      */

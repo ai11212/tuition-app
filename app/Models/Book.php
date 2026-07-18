@@ -11,7 +11,7 @@ class Book extends Model
     // Dynamic fillable array based on column existence
     public function getFillable()
     {
-        $fillable = ['reference','subject','title','price'];
+        $fillable = ['reference','subject','title','price','issue_date'];
         
         // Add student_reference only if column exists
         if (Schema::hasColumn('books', 'student_reference')) {
@@ -21,7 +21,9 @@ class Book extends Model
         return $fillable;
     }
     
-    protected $fillable = ['reference','subject','title','price'];
+    protected $fillable = ['reference','subject','title','price','issue_date'];
+
+    protected $casts = ['issue_date' => 'date'];
     
     // Override to use dynamic fillable
     public function fill(array $attributes)
