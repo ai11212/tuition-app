@@ -470,10 +470,14 @@
                   'invoice_ref' => $p->invoice_ref ?? ''
                 ]) }})" 
                         class="px-2 py-1 rounded bg-blue-100 text-blue-700 text-sm hover:bg-blue-200">✏️ Edit</button>
-                <form method="POST" action="{{ route('payments.destroy', $p->id) }}" 
+                <form method="POST" action="{{ route('payments.destroy', $p->id) }}"
                       id="delete-form-{{ $p->id }}" class="inline">
                   @csrf
                   @method('DELETE')
+                  {{-- Keep the student context so the redirect returns to the refreshed summary --}}
+                  <input type="hidden" name="ref" value="{{ $ref }}">
+                  <input type="hidden" name="from" value="{{ $from }}">
+                  <input type="hidden" name="to" value="{{ $to }}">
                   <button type="button" 
                           onclick="confirmDelete({{ $p->id }}, '{{ $p->invoice_ref ?? 'N/A' }}')"
                           class="px-2 py-1 rounded bg-red-100 text-red-700 text-sm hover:bg-red-200">🗑️ Delete</button>
@@ -507,6 +511,10 @@
       <form method="POST" action="" id="editForm">
         @csrf
         @method('PUT')
+        {{-- Keep the student context so the redirect returns to the refreshed summary --}}
+        <input type="hidden" name="ref" value="{{ $ref }}">
+        <input type="hidden" name="from" value="{{ $from }}">
+        <input type="hidden" name="to" value="{{ $to }}">
 
         {{-- Student Info (Read-only) --}}
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">

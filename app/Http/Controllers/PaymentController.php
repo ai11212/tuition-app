@@ -330,6 +330,10 @@ class PaymentController extends Controller
             'period_to'  => $periodTo,
             'amount'     => $data['amount'],
             'balance'    => 0,
+            // Due submitted together with this payment — deleting the payment
+            // reverses exactly this amount from the student's fee base
+            'due_added'  => (!empty($data['payment_due']) && Schema::hasColumn('invoices','due_added'))
+                                ? $data['payment_due'] : null,
             'status'     => 'paid',
         ]);
 
@@ -646,7 +650,21 @@ class PaymentController extends Controller
         try {
             $payment = PaymentTransaction::with('invoice')->findOrFail($id);
             $invoiceRef = $payment->invoice->reference ?? 'N/A';
-            
+
+            // If a Payment Due was recorded together with this payment, reverse
+            // exactly that amount from the student's fee base so the Balance
+            // returns to its pre-recording value. Older payments (due_added
+            // NULL) leave the fee base untouched, as before.
+            $dueAdded = (float) ($payment->invoice->due_added ?? 0);
+            if ($payment->invoice && $dueAdded > 0) {
+                $stu = Student::find($payment->invoice->student_id);
+                if ($stu) {
+                    $stu->update([
+                        'pending_amount' => max(0, ($stu->pending_amount ?? $stu->payment ?? 0) - $dueAdded),
+                    ]);
+                }
+            }
+
             // Delete invoice first (if exists), then payment
             if ($payment->invoice) {
                 $payment->invoice->delete();
