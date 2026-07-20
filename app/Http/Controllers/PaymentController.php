@@ -237,6 +237,21 @@ class PaymentController extends Controller
                 // offsets it against future dues automatically
                 $studentDetails['credit_balance'] = max(0, $totalPaid - $expectedTotal);
 
+                // Invoice History Summary — last 4 invoices (display only)
+                $studentDetails['recent_invoices'] = \App\Models\Invoice::where('student_id', $exactStudent->id)
+                    ->with('transactions')
+                    ->orderByDesc('id')
+                    ->take(4)
+                    ->get()
+                    ->map(fn($inv) => (object) [
+                        'reference'    => $inv->reference,
+                        'period_from'  => $inv->period_from,
+                        'period_to'    => $inv->period_to,
+                        'amount'       => $inv->amount,
+                        'payment_date' => optional($inv->transactions->first())->paid_at
+                                           ?? optional($inv->transactions->first())->paid_on,
+                    ]);
+
                 // --- Attendance summary for the Student Info popup (DISPLAY ONLY;
                 // --- does NOT affect Payment Pending or any existing calculation) ---
                 $familyStudents = Student::where('reference', $exactStudent->reference)->orderBy('id')->get();

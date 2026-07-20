@@ -32,23 +32,50 @@
   <input name="ref" value="{{ old('ref', $ref ?? '') }}" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2" placeholder="Type to search...">
     </div>
     <div>
-      <label class="text-sm text-gray-600">From <span class="text-red-500">*</span></label>
-  <input type="date" name="from" value="{{ old('from', $from ?? '') }}" required
-         oninvalid="this.setCustomValidity('Please select the From date — the range drives attendance and tuition figures.')"
-         oninput="this.setCustomValidity('')"
+      <label class="text-sm text-gray-600">From</label>
+  <input type="date" name="from" value="{{ old('from', $from ?? '') }}"
          class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
     </div>
     <div>
-      <label class="text-sm text-gray-600">To <span class="text-red-500">*</span></label>
-  <input type="date" name="to" value="{{ old('to', $to ?? '') }}" required
-         oninvalid="this.setCustomValidity('Please select the To date — the range drives attendance and tuition figures.')"
-         oninput="this.setCustomValidity('')"
+      <label class="text-sm text-gray-600">To</label>
+  <input type="date" name="to" value="{{ old('to', $to ?? '') }}"
          class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
     </div>
     <div class="flex items-end">
       <button class="w-full px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Search</button>
     </div>
   </form>
+
+  {{-- Invoice History Summary (last 4 invoices) — display only --}}
+  @if(isset($studentDetails) && $studentDetails)
+    <div class="p-4 rounded-xl border-2 border-gray-200 bg-white mb-6">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-semibold text-gray-800">🧾 Invoice History Summary</h2>
+        <span class="text-xs text-gray-500">(last 4 invoices)</span>
+      </div>
+      @php $recentInvoices = $studentDetails['recent_invoices'] ?? collect(); @endphp
+      @if($recentInvoices->isEmpty())
+        <div class="text-sm text-gray-500">No previous invoices found.</div>
+      @else
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          @foreach($recentInvoices as $inv)
+            <div class="p-3 rounded-lg border bg-gray-50">
+              <div class="font-semibold text-gray-800 text-sm">{{ $inv->reference }}</div>
+              <div class="text-xs text-gray-600 mt-1">
+                {{ $inv->period_from ? \Carbon\Carbon::parse($inv->period_from)->format('d/m/y') : '—' }}
+                –
+                {{ $inv->period_to ? \Carbon\Carbon::parse($inv->period_to)->format('d/m/y') : '—' }}
+              </div>
+              <div class="text-sm font-semibold text-gray-900 mt-1">£{{ number_format((float) $inv->amount, 2) }}</div>
+              <div class="text-xs text-gray-500 mt-1">
+                Paid {{ $inv->payment_date ? \Carbon\Carbon::parse($inv->payment_date)->format('d/m/Y') : '—' }}
+              </div>
+            </div>
+          @endforeach
+        </div>
+      @endif
+    </div>
+  @endif
 
   {{-- Student Information Card (when exact reference match found) --}}
   @if(isset($studentDetails) && $studentDetails)
