@@ -33,13 +33,19 @@ class PaymentController extends Controller
             ]);
 
         if ($ref !== '')   $q->where('students.reference','LIKE',$ref.'%');
-        if ($from) {
+
+        // Display-only toggle for the invoice list: once a student is searched,
+        // default to ALL their invoices; 'range' re-applies the date filter.
+        // Summaries/attendance keep using $from/$to regardless.
+        $show = $r->input('show', 'all');
+        $applyDates = ($ref === '') || ($show === 'range');
+        if ($applyDates && $from) {
             $q->where(function($qq) use ($from, $hasPaidAt) {
                 if ($hasPaidAt) $qq->whereDate('payment_transactions.paid_at','>=',$from);
                 $qq->orWhereDate('payment_transactions.paid_on','>=',$from);
             });
         }
-        if ($to) {
+        if ($applyDates && $to) {
             $q->where(function($qq) use ($to, $hasPaidAt) {
                 if ($hasPaidAt) $qq->whereDate('payment_transactions.paid_at','<=',$to);
                 $qq->orWhereDate('payment_transactions.paid_on','<=',$to);
@@ -274,7 +280,7 @@ class PaymentController extends Controller
             }
         }
 
-        return view('finance.payments', compact('ref','from','to','payments','students','studentDetails'));
+        return view('finance.payments', compact('ref','from','to','show','payments','students','studentDetails'));
     }
 
     /** Store a payment and/or add a payment due (two-field workflow) */
@@ -492,8 +498,12 @@ class PaymentController extends Controller
             ->orderBy('day_of_week')
             ->orderBy('start_time')
             ->get();
-        
-        return view('finance.invoice', compact('invoice', 'timetables'));
+
+        // Current family summary — lets the invoice show a credit receipt when
+        // this payment left the family in credit (display only)
+        $summary = $invoice->student ? \App\Support\PaymentSummary::forStudent($invoice->student) : null;
+
+        return view('finance.invoice', compact('invoice', 'timetables', 'summary'));
     }
 
     /** ACCOUNTS SUMMARY */

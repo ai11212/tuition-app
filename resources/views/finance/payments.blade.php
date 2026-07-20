@@ -388,11 +388,12 @@
       </div>
       <div class="md:col-span-2">
         <label class="text-sm text-gray-600">Payment Period From</label>
-        <input type="date" name="period_from" value="{{ old('period_from', date('Y-m-d')) }}" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
+        {{-- Pre-filled from the search From/To when present; still editable --}}
+        <input type="date" name="period_from" value="{{ old('period_from', $from ?: date('Y-m-d')) }}" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
       </div>
       <div class="md:col-span-2">
         <label class="text-sm text-gray-600">Payment Period To</label>
-        <input type="date" name="period_to" value="{{ old('period_to', date('Y-m-d', strtotime('+1 week'))) }}" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
+        <input type="date" name="period_to" value="{{ old('period_to', $to ?: date('Y-m-d', strtotime('+1 week'))) }}" class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2">
       </div>
       <div class="md:col-span-6">
         <label class="text-sm text-gray-600">Notes</label>
@@ -408,6 +409,26 @@
   </div>
 
   {{-- Results --}}
+  {{-- Display-only toggle: All Invoices (default) vs Selected Dates — shown once a student is searched --}}
+  @if(($ref ?? '') !== '')
+    @php $showMode = $show ?? 'all'; @endphp
+    <div id="invoices" class="flex items-center gap-2 mb-3">
+      <a href="{{ route('payments', ['ref' => $ref, 'from' => $from, 'to' => $to, 'show' => 'all']) }}#invoices"
+         class="px-4 py-2 rounded-full text-sm font-medium border transition
+                {{ $showMode !== 'range' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' }}">
+        All Invoices
+      </a>
+      <a href="{{ route('payments', ['ref' => $ref, 'from' => $from, 'to' => $to, 'show' => 'range']) }}#invoices"
+         class="px-4 py-2 rounded-full text-sm font-medium border transition
+                {{ $showMode === 'range' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' }}">
+        Selected Dates
+      </a>
+      <span class="text-xs text-gray-500 ml-1">
+        {{ $showMode === 'range' ? 'Showing invoices within the selected dates' : 'Showing every invoice for this student' }}
+      </span>
+    </div>
+  @endif
+
   <div class="rounded-xl border bg-white overflow-x-auto">
     <table class="min-w-full text-sm">
       <thead class="bg-gray-50">

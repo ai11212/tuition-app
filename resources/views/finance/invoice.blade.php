@@ -221,6 +221,22 @@
         </div>
         @endif
 
+        <!-- Credit receipt: shown when the family currently holds credit (advance payment) -->
+        @if(($summary['credit_balance'] ?? 0) > 0)
+        <div style="margin: 10px 0; padding: 12px 15px; border: 1px solid #a7f3d0; background: #ecfdf5; border-radius: 6px;">
+            <div style="font-size: 16px; font-weight: bold; color: #047857;">
+                Credit Balance: £{{ number_format($summary['credit_balance'], 2) }}
+            </div>
+            <div style="font-size: 13px; margin-top: 4px;">
+                Current Outstanding Balance: £{{ number_format($summary['payment_pending'] ?? 0, 2) }}
+            </div>
+            <div style="font-size: 12px; color: #065f46; margin-top: 6px;">
+                This payment exceeded the current balance. The remaining amount has been recorded as
+                student credit and will automatically be applied to future charges.
+            </div>
+        </div>
+        @endif
+
         <!-- Total Amount -->
         <div class="amount-total">
             Total Amount Paid: £{{ number_format($invoicePaid, 2) }}
