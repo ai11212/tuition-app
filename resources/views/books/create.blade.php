@@ -64,8 +64,15 @@
 
                         <div class="mb-3">
                             <label class="form-label">Subject *</label>
-                            <input type="text" name="subject" class="form-control @error('subject') is-invalid @enderror" 
+                            <input type="text" name="subject" list="subject_suggestions" autocomplete="off"
+                                   class="form-control @error('subject') is-invalid @enderror"
                                    placeholder="e.g., Mathematics" value="{{ old('subject') }}" required>
+                            {{-- Distinct library subjects — typing filters the Book Library dropdown live --}}
+                            <datalist id="subject_suggestions">
+                                @foreach($libraryBooks->pluck('subject')->filter()->unique() as $subj)
+                                    <option value="{{ $subj }}"></option>
+                                @endforeach
+                            </datalist>
                             @error('subject')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -409,6 +416,40 @@ if (libraryPicker) {
             form.querySelector('[name="subject"]').value = opt.dataset.subject;
             form.querySelector('[name="title"]').value = opt.dataset.title;
             form.querySelector('[name="price"]').value = opt.dataset.price;
+        }
+    });
+}
+
+// Subject typed-filter: typing in Subject live-filters the Book Library dropdown
+// (case-insensitive, partial match). Empty subject = all books, as before.
+const subjectFilterInput = document.querySelector('#add-book-form [name="subject"]');
+if (libraryPicker && subjectFilterInput) {
+    // Snapshot the library options once (placeholder and "Other" always remain)
+    const masterLibraryOptions = Array.from(libraryPicker.options)
+        .filter(o => o.dataset.subject !== undefined && o.value !== 'other');
+    const placeholderOption = libraryPicker.options[0];
+    const otherOption = Array.from(libraryPicker.options).find(o => o.value === 'other');
+
+    subjectFilterInput.addEventListener('input', function() {
+        const term = this.value.trim().toLowerCase();
+        const selectedBefore = libraryPicker.selectedIndex > 0 ? libraryPicker.options[libraryPicker.selectedIndex] : null;
+
+        const frag = document.createDocumentFragment();
+        frag.appendChild(placeholderOption);
+        let keptSelection = false;
+        masterLibraryOptions.forEach(o => {
+            if (term === '' || o.dataset.subject.toLowerCase().includes(term)) {
+                frag.appendChild(o);
+                if (o === selectedBefore) keptSelection = true;
+            }
+        });
+        frag.appendChild(otherOption);
+
+        libraryPicker.innerHTML = '';
+        libraryPicker.appendChild(frag);
+        // Clear a selection that no longer belongs to the filtered subject
+        if (selectedBefore && !keptSelection && selectedBefore !== otherOption) {
+            libraryPicker.selectedIndex = 0;
         }
     });
 }
