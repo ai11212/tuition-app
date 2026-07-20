@@ -80,41 +80,29 @@ class AttendanceController extends Controller {
                 continue;
             }
             
-            // Check if attendance already exists for this student on this date+time
-            // (Student cannot be in two places at the same time)
-            $existingTime = StudentAttendance::where('student_id', $studentId)
-                ->where('date', $data['date'])
-                ->where('time', $time)
-                ->first();
-            
             $student = \App\Models\Student::find($studentId);
             $studentName = $student ? $student->first_name . ' ' . $student->last_name : 'Unknown';
-            
-            if ($existingTime) {
-                // Student already has attendance for this time slot
-                $duplicates[] = $studentName . ' (already logged at ' . $time . ')';
-                continue;
-            }
 
-            // The database allows only ONE record per student + date + subject
-            // (unique index) — a save for the same subject at a DIFFERENT time
-            // slot would still collide, so skip it gracefully instead of crashing
-            if (!empty($data['subject'])) {
-                $existingSubject = StudentAttendance::where('student_id', $studentId)
+            // A duplicate is the same student in the SAME time slot on a date —
+            // a student cannot be in two classes at once. The subject is NOT part
+            // of the key, so the same subject in a different slot is allowed, and
+            // subject casing can never bypass the check.
+            if (!empty($time)) {
+                $existingSlot = StudentAttendance::where('student_id', $studentId)
                     ->where('date', $data['date'])
-                    ->where('subject', $data['subject'])
+                    ->where('time', $time)
                     ->first();
-                if ($existingSubject) {
-                    $duplicates[] = $studentName . ' (already marked for ' . $data['subject'] . ' on this date)';
+                if ($existingSlot) {
+                    $duplicates[] = $studentName . ' (attendance already exists for this time slot)';
                     continue;
                 }
             }
 
-            // Save new attendance
+            // Save new attendance (subject trimmed; stored as typed otherwise)
             StudentAttendance::create([
                 'student_id' => $studentId,
                 'date' => $data['date'],
-                'subject' => $data['subject'],
+                'subject' => isset($data['subject']) ? trim($data['subject']) : null,
                 'teacher' => $data['teacher'] ?? null,
                 'time' => $time,
                 'status' => $status
@@ -363,19 +351,23 @@ class AttendanceController extends Controller {
             'teacher' => 'nullable|string|max:100',
         ]);
 
-        // Guard the unique(student_id, date, subject) index: the same student
-        // cannot have two records for one date + subject
-        $subject = $data['subject'] ?? null;
-        $dup = StudentAttendance::where('student_id', $attendance->student_id)
-            ->where('date', $data['date'])
-            ->where('id', '!=', $attendance->id);
-        if ($subject !== null && $subject !== '') {
-            $dup->where('subject', $subject);
-        } else {
-            $dup->whereNull('subject');
+        // Guard the unique(student_id, date, time) rule: the same student cannot
+        // have two records in the same time slot on a date (subject is not part
+        // of the key — the same subject in a different slot is allowed).
+        $time = $data['time'] ?? null;
+        if ($time !== null && $time !== '') {
+            $dup = StudentAttendance::where('student_id', $attendance->student_id)
+                ->where('date', $data['date'])
+                ->where('time', $time)
+                ->where('id', '!=', $attendance->id)
+                ->exists();
+            if ($dup) {
+                return back()->with('warning', 'Not saved: this student already has attendance in this time slot.');
+            }
         }
-        if ($dup->exists()) {
-            return back()->with('warning', 'Not saved: this student already has an attendance record for that date and subject.');
+
+        if (isset($data['subject'])) {
+            $data['subject'] = trim($data['subject']);
         }
 
         $attendance->update($data);
