@@ -169,7 +169,12 @@ class TeacherSalaryController extends Controller
             ->with('ok', "Salary {$salary->reference} deleted — its attendance sessions are unpaid again");
     }
 
-    /** Unpaid Present records for the teacher in range, grouped into class sessions (date + slot + subject) */
+    /**
+     * Unpaid Present records for the teacher in range, grouped into class
+     * sessions. One session = teacher + date + time slot (the slot label holds
+     * start AND end time) — multiple subjects taught in the same slot are ONE
+     * payable session, never one per attendance row.
+     */
     private function unpaidSessions(Staff $teacher, $from, $to)
     {
         return StudentAttendance::where('teacher', $teacher->name)
@@ -179,14 +184,22 @@ class TeacherSalaryController extends Controller
             ->when($to, fn($q) => $q->whereDate('date', '<=', $to))
             ->orderBy('date')->orderBy('time')
             ->get()
-            ->groupBy(fn($a) => $a->date . '|' . ($a->time ?? '') . '|' . ($a->subject ?? ''))
-            ->map(fn($records) => (object) [
-                'date'       => $records->first()->date,
-                'time'       => $records->first()->time,
-                'subject'    => $records->first()->subject,
-                'students'   => $records->count(),
-                'record_ids' => $records->pluck('id'),
-            ])
+            ->groupBy(fn($a) => $a->date . '|' . ($a->time ?? ''))
+            ->map(function ($records) {
+                // Distinct subjects in the slot (case-insensitive, first casing kept)
+                $subjects = $records->pluck('subject')->filter()
+                    ->unique(fn($s) => mb_strtolower(trim($s)))->values();
+
+                return (object) [
+                    'date'          => $records->first()->date,
+                    'time'          => $records->first()->time,
+                    'subjects'      => $subjects,
+                    'subject'       => $subjects->implode(', '),
+                    'subject_count' => $subjects->count(),
+                    'students'      => $records->count(),
+                    'record_ids'    => $records->pluck('id'),
+                ];
+            })
             ->values();
     }
 

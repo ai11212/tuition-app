@@ -8,7 +8,7 @@
 <div class="max-w-6xl mx-auto">
   <div class="mb-6">
     <h1 class="text-2xl font-bold text-gray-800">💰 Teacher Salaries</h1>
-    <p class="text-sm text-gray-500">Salaries are calculated from unpaid Present attendance — one class session (date + time slot + subject) = 2 hours × the teacher's hourly rate.</p>
+    <p class="text-sm text-gray-500">Salaries are calculated from unpaid Present attendance — one class session (date + time slot) = 2 hours × the teacher's hourly rate. Multiple subjects taught in the same slot count as one session.</p>
   </div>
 
   {{-- Filters / calculator --}}
@@ -112,8 +112,30 @@
             <tr class="even:bg-gray-50">
               <td class="px-4 py-3">{{ \Carbon\Carbon::parse($s->date)->format('d/m/Y') }}</td>
               <td class="px-4 py-3">{{ $s->time ?: '—' }}</td>
-              <td class="px-4 py-3">{{ $s->subject ?: '—' }}</td>
-              <td class="px-4 py-3 text-center">{{ $s->students }}</td>
+              <td class="px-4 py-3">
+                @if(($s->subject_count ?? 1) > 1)
+                  <details>
+                    <summary class="cursor-pointer">
+                      {{ $s->subject }}
+                      <span class="block text-xs text-gray-500">1 session · {{ $s->subject_count }} subjects</span>
+                    </summary>
+                    <ul class="mt-1 ml-4 list-disc text-xs text-gray-600">
+                      @foreach($s->subjects as $subj)
+                        <li>{{ $subj }}</li>
+                      @endforeach
+                    </ul>
+                  </details>
+                @else
+                  {{ $s->subject ?: '—' }}
+                @endif
+              </td>
+              <td class="px-4 py-3 text-center">
+                @if(($s->subject_count ?? 1) > 1)
+                  {{ $s->students }} students across {{ $s->subject_count }} subjects
+                @else
+                  {{ $s->students }}
+                @endif
+              </td>
               <td class="px-4 py-3 text-center">2</td>
               <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800">Present</span></td>
             </tr>
@@ -125,6 +147,39 @@
       <div class="p-8 text-center text-gray-500">No unpaid attendance sessions in this period. 🎉</div>
       @endif
     </div>
+
+    {{-- Salary Calculation Summary --}}
+    @if($calc['session_count'] && $calc['rate'] !== null)
+    <div class="bg-white rounded-xl border shadow-sm p-5 mb-6">
+      <h2 class="text-lg font-bold text-gray-800 mb-4">🧮 Salary Calculation Summary</h2>
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 text-sm mb-4">
+        <div>
+          <div class="text-xs font-semibold text-gray-500">Teacher Hourly Rate</div>
+          <div class="text-lg font-semibold">£{{ number_format((float)$calc['rate'], 2) }}</div>
+        </div>
+        <div>
+          <div class="text-xs font-semibold text-gray-500">Unique Teaching Sessions</div>
+          <div class="text-lg font-semibold">{{ $calc['session_count'] }}</div>
+        </div>
+        <div>
+          <div class="text-xs font-semibold text-gray-500">Hours per Session</div>
+          <div class="text-lg font-semibold">2</div>
+        </div>
+        <div>
+          <div class="text-xs font-semibold text-gray-500">Total Hours Worked</div>
+          <div class="text-lg font-semibold">{{ $calc['hours'] }}</div>
+        </div>
+        <div>
+          <div class="text-xs font-semibold text-gray-500">Gross Salary</div>
+          <div class="text-lg font-semibold text-purple-700">£{{ number_format((float)$calc['gross'], 2) }}</div>
+        </div>
+      </div>
+      <div class="px-4 py-3 rounded-lg bg-gray-50 border text-sm text-gray-700">
+        {{ $calc['session_count'] }} Sessions × 2 Hours × £{{ number_format((float)$calc['rate'], 2) }}
+        = <span class="font-semibold">£{{ number_format((float)$calc['gross'], 2) }}</span>
+      </div>
+    </div>
+    @endif
 
     {{-- Pay Salary --}}
     @if($calc['session_count'] && $calc['rate'] !== null)
