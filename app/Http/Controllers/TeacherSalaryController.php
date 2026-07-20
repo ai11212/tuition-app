@@ -182,7 +182,7 @@ class TeacherSalaryController extends Controller
             ->whereNull('salary_id')
             ->when($from, fn($q) => $q->whereDate('date', '>=', $from))
             ->when($to, fn($q) => $q->whereDate('date', '<=', $to))
-            ->orderBy('date')->orderBy('time')
+            ->orderByDesc('date')->orderBy('time')
             ->get()
             ->groupBy(fn($a) => $a->date . '|' . ($a->time ?? ''))
             ->map(function ($records) {
