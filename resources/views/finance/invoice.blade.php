@@ -149,7 +149,7 @@
 </head>
 <body>
     <div class="action-buttons">
-        <a href="{{ route('payments', ['ref' => optional($invoice->student)->reference]) }}" class="btn btn-back">← Back to Payments</a>
+        <a href="{{ route('payments', array_filter(['ref' => optional($invoice->student)->reference, 'from' => request('from'), 'to' => request('to')])) }}" class="btn btn-back">← Back to Payments</a>
         <button onclick="window.print()" class="btn btn-print">🖨️ Print Invoice</button>
     </div>
     <div class="invoice-container">

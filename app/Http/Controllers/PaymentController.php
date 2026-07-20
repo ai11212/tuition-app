@@ -319,7 +319,7 @@ class PaymentController extends Controller
             $outstanding = max(0, $expected - $paid);
             $credit = max(0, $paid - $expected);
 
-            return redirect()->route('payments', ['ref' => $data['reference']])
+            return redirect()->route('payments', ['ref' => $data['reference'], 'from' => $r->input('from'), 'to' => $r->input('to')])
                 ->with('ok', 'Payment due of £' . number_format($data['payment_due'], 2)
                     . ' added. Outstanding now: £' . number_format($outstanding, 2)
                     . ($credit > 0 ? ' · Credit balance: £' . number_format($credit, 2) : ''));
@@ -379,8 +379,9 @@ class PaymentController extends Controller
         // show the balance as of this payment (invoice.blade.php reads it)
         $inv->update(['balance' => max(0, $this->expectedForStudent($student) - $this->paidForStudent($student))]);
 
-        // After creating an invoice+transaction, redirect to the invoice print page
-        return redirect()->route('invoice.print', $inv->id);
+        // After creating an invoice+transaction, redirect to the invoice print page.
+        // Search dates ride along so the Back to Payments link can restore the page state.
+        return redirect()->route('invoice.print', ['invoice' => $inv->id, 'from' => $r->input('from'), 'to' => $r->input('to')]);
     }
 
     /** Expected total for a student — delegates to the shared source of truth */

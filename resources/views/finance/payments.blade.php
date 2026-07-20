@@ -340,6 +340,9 @@
     @php $students = $students ?? collect(); @endphp
     <form method="POST" action="{{ route('payments.store') }}" class="grid md:grid-cols-6 gap-3">
       @csrf
+      {{-- Carry the top search dates through the save so the page state is restored afterwards --}}
+      <input type="hidden" name="from" value="{{ $from }}">
+      <input type="hidden" name="to" value="{{ $to }}">
       <div class="md:col-span-2">
         <label class="text-sm text-gray-600">Reference*</label>
         <input name="reference" value="{{ old('reference', $ref ?? '') }}" required class="w-full mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2" placeholder="Student reference">
