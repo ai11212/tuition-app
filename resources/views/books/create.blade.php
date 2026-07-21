@@ -49,20 +49,6 @@
                         @endif
 
                         <div class="mb-3">
-                            <label class="form-label">Book (from Library)</label>
-                            <select id="library_book_picker" class="form-select">
-                                <option value="">— Select from Book Library —</option>
-                                @foreach($libraryBooks as $lb)
-                                    <option data-subject="{{ $lb->subject }}" data-title="{{ $lb->title }}" data-price="{{ $lb->price }}">
-                                        {{ $lb->subject }} — {{ $lb->title }} (£{{ number_format($lb->price, 2) }})
-                                    </option>
-                                @endforeach
-                                <option value="other">Other (enter manually)</option>
-                            </select>
-                            <div class="form-text">Pick a library book to auto-fill the fields below, or choose Other.</div>
-                        </div>
-
-                        <div class="mb-3">
                             <label class="form-label">Subject *</label>
                             <input type="text" name="subject" list="subject_suggestions" autocomplete="off"
                                    class="form-control @error('subject') is-invalid @enderror"
@@ -76,6 +62,20 @@
                             @error('subject')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Book (from Library)</label>
+                            <select id="library_book_picker" class="form-select">
+                                <option value="">— Select from Book Library —</option>
+                                @foreach($libraryBooks as $lb)
+                                    <option data-subject="{{ $lb->subject }}" data-title="{{ $lb->title }}" data-price="{{ $lb->price }}">
+                                        {{ $lb->subject }} — {{ $lb->title }} (£{{ number_format($lb->price, 2) }})
+                                    </option>
+                                @endforeach
+                                <option value="other">Other (enter manually)</option>
+                            </select>
+                            <div class="form-text">Pick a library book to auto-fill the fields below, or choose Other.</div>
                         </div>
 
                         <div class="mb-3">
