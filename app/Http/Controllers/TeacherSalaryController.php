@@ -177,7 +177,8 @@ class TeacherSalaryController extends Controller
      */
     private function unpaidSessions(Staff $teacher, $from, $to)
     {
-        return StudentAttendance::where('teacher', $teacher->name)
+        return StudentAttendance::with('student')
+            ->where('teacher', $teacher->name)
             ->where('status', 'present')
             ->whereNull('salary_id')
             ->when($from, fn($q) => $q->whereDate('date', '>=', $from))
@@ -198,6 +199,12 @@ class TeacherSalaryController extends Controller
                     'subject_count' => $subjects->count(),
                     'students'      => $records->count(),
                     'record_ids'    => $records->pluck('id'),
+                    // View-only: who was in the session (for the Students popup)
+                    'students_list' => $records->map(fn($r) => [
+                        'reference' => $r->student->reference ?? '—',
+                        'name'      => trim(($r->student->first_name ?? '') . ' ' . ($r->student->last_name ?? '')) ?: '—',
+                        'subject'   => $r->subject ?: '—',
+                    ])->values(),
                 ];
             })
             ->values();

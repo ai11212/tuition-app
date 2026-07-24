@@ -130,11 +130,16 @@
                 @endif
               </td>
               <td class="px-4 py-3 text-center">
-                @if(($s->subject_count ?? 1) > 1)
-                  {{ $s->students }} students across {{ $s->subject_count }} subjects
-                @else
-                  {{ $s->students }}
-                @endif
+                {{-- Clickable count: opens the Students popup for this session (view-only) --}}
+                <button type="button" onclick="openSessionStudents({{ $loop->index }})"
+                        class="text-blue-600 hover:text-blue-800 hover:underline font-medium cursor-pointer"
+                        title="Click to see the students in this session">
+                  @if(($s->subject_count ?? 1) > 1)
+                    {{ $s->students }} students across {{ $s->subject_count }} subjects
+                  @else
+                    {{ $s->students }}
+                  @endif
+                </button>
               </td>
               <td class="px-4 py-3 text-center">2</td>
               <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800">Present</span></td>
@@ -147,6 +152,70 @@
       <div class="p-8 text-center text-gray-500">No unpaid attendance sessions in this period. 🎉</div>
       @endif
     </div>
+
+    {{-- Students-in-session popup (view-only — no calculation involved) --}}
+    @php
+        $sessionStudentsPayload = $calc['sessions']->map(fn($s) => [
+            'date'     => \Carbon\Carbon::parse($s->date)->format('d/m/Y'),
+            'time'     => $s->time ?: '—',
+            'subject'  => $s->subject ?: '—',
+            'students' => $s->students_list ?? [],
+        ])->values();
+    @endphp
+    <div id="session-students-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.5);">
+      <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col">
+        <div class="px-5 py-4 border-b flex items-start justify-between">
+          <div>
+            <h3 class="text-lg font-bold text-gray-800">👥 Students in Session</h3>
+            <div class="text-sm text-gray-600 mt-1">
+              Teacher: <span class="font-medium">{{ $calc['teacher']->name }}</span><br>
+              <span id="ssm-date"></span> · <span id="ssm-time"></span><br>
+              Subject: <span id="ssm-subject"></span>
+            </div>
+          </div>
+          <button type="button" onclick="closeSessionStudents()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+        </div>
+        <div class="overflow-y-auto p-5">
+          <table class="min-w-full text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">Reference</th>
+                <th class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">Student Name</th>
+              </tr>
+            </thead>
+            <tbody id="ssm-rows" class="divide-y divide-gray-200"></tbody>
+          </table>
+        </div>
+        <div class="px-5 py-3 border-t text-right">
+          <button type="button" onclick="closeSessionStudents()"
+                  class="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300">Close</button>
+        </div>
+      </div>
+    </div>
+    <script>
+      const sessionStudents = @json($sessionStudentsPayload);
+      function openSessionStudents(i) {
+        const s = sessionStudents[i];
+        if (!s) return;
+        document.getElementById('ssm-date').textContent = s.date;
+        document.getElementById('ssm-time').textContent = s.time;
+        document.getElementById('ssm-subject').textContent = s.subject;
+        document.getElementById('ssm-rows').innerHTML = s.students.map(st =>
+          '<tr><td class="px-3 py-2 font-medium">' + escapeHtmlSS(st.reference) + '</td>' +
+          '<td class="px-3 py-2">' + escapeHtmlSS(st.name) + '</td></tr>'
+        ).join('');
+        document.getElementById('session-students-modal').classList.remove('hidden');
+      }
+      function closeSessionStudents() {
+        document.getElementById('session-students-modal').classList.add('hidden');
+      }
+      function escapeHtmlSS(v) {
+        return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      }
+      // Close on overlay click or Escape
+      document.getElementById('session-students-modal').addEventListener('click', function(e){ if (e.target === this) closeSessionStudents(); });
+      document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeSessionStudents(); });
+    </script>
 
     {{-- Salary Calculation Summary --}}
     @if($calc['session_count'] && $calc['rate'] !== null)
