@@ -23,9 +23,11 @@
 
     {{-- Add Book Form --}}
     <div class="bg-white shadow-sm rounded-lg p-6 mb-6">
-        <h2 class="text-xl font-bold text-gray-800 mb-4">➕ Add New Book</h2>
-        <form method="POST" action="{{ route('library.store') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <h2 class="text-xl font-bold text-gray-800 mb-4" id="library-form-heading">➕ Add New Book</h2>
+        <form method="POST" action="{{ route('library.store') }}" id="library-book-form" class="grid grid-cols-1 md:grid-cols-3 gap-4">
             @csrf
+            {{-- JS injects a _method=PUT here while editing --}}
+            <span id="form-mode-fields" class="hidden"></span>
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Subject <span class="text-red-500">*</span></label>
@@ -54,9 +56,13 @@
                 @enderror
             </div>
 
-            <div class="md:col-span-3">
-                <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition">
+            <div class="md:col-span-3 flex items-center gap-3">
+                <button type="submit" id="library-submit-btn" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition">
                     💾 Save Book
+                </button>
+                <button type="button" id="library-cancel-btn" onclick="cancelLibraryEdit()"
+                        class="hidden px-6 py-2 bg-gray-200 text-gray-700 font-semibold rounded-md hover:bg-gray-300 transition">
+                    Cancel
                 </button>
             </div>
         </form>
@@ -88,6 +94,11 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">£{{ number_format($book->price, 2) }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ $book->created_at ? $book->created_at->format('d M Y') : '-' }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <button type="button"
+                                            onclick="editLibraryBook({{ $book->id }}, '{{ addslashes($book->subject) }}', '{{ addslashes($book->title) }}', '{{ $book->price }}')"
+                                            class="text-blue-600 hover:text-blue-900 font-medium mr-3">
+                                        ✏️ Edit
+                                    </button>
                                     <form method="POST" action="{{ route('library.destroy', $book->id) }}"
                                           onsubmit="return confirm('Remove this book from the library?');"
                                           class="inline">
@@ -113,4 +124,40 @@
         </div>
     @endif
 </div>
+
+<script>
+// Edit mode: populate the form with the book, switch to PUT update — same record, no new row
+function editLibraryBook(id, subject, title, price) {
+    const form = document.getElementById('library-book-form');
+    form.action = '{{ url('book-library') }}/' + id;
+    document.getElementById('form-mode-fields').innerHTML =
+        '<input type="hidden" name="_method" value="PUT">';
+
+    form.querySelector('[name="subject"]').value = subject;
+    form.querySelector('[name="title"]').value = title;
+    form.querySelector('[name="price"]').value = price;
+
+    document.getElementById('library-form-heading').textContent = '✏️ Edit Book';
+    document.getElementById('library-submit-btn').textContent = 'Update Book';
+    document.getElementById('library-cancel-btn').classList.remove('hidden');
+
+    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    form.querySelector('[name="subject"]').focus();
+}
+
+// Back to Add mode without saving
+function cancelLibraryEdit() {
+    const form = document.getElementById('library-book-form');
+    form.action = '{{ route('library.store') }}';
+    document.getElementById('form-mode-fields').innerHTML = '';
+
+    form.querySelector('[name="subject"]').value = '';
+    form.querySelector('[name="title"]').value = '';
+    form.querySelector('[name="price"]').value = '';
+
+    document.getElementById('library-form-heading').textContent = '➕ Add New Book';
+    document.getElementById('library-submit-btn').textContent = '💾 Save Book';
+    document.getElementById('library-cancel-btn').classList.add('hidden');
+}
+</script>
 @endsection

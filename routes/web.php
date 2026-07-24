@@ -119,6 +119,7 @@ Route::middleware(['auth'])->group(function () {
     // Book Library (catalog only — separate from student-issued books)
     Route::get('/book-library',         [\App\Http\Controllers\LibraryBookController::class,'index'])->name('library.index');
     Route::post('/book-library',        [\App\Http\Controllers\LibraryBookController::class,'store'])->name('library.store');
+    Route::put('/book-library/{id}',    [\App\Http\Controllers\LibraryBookController::class,'update'])->name('library.update');
     Route::delete('/book-library/{id}', [\App\Http\Controllers\LibraryBookController::class,'destroy'])->name('library.destroy');
 
     // Teacher Salaries (paid from attendance; auto-creates "Teacher Salary" expenses)

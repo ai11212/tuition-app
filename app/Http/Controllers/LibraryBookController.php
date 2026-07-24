@@ -27,6 +27,20 @@ class LibraryBookController extends Controller
         return redirect()->route('library.index')->with('success', 'Book added to library!');
     }
 
+    /** Edit a catalog book in place — same record/ID, no new row */
+    public function update(Request $r, $id)
+    {
+        $data = $r->validate([
+            'subject' => 'required|string|max:100',
+            'title'   => 'required|string|max:190',
+            'price'   => 'required|numeric|min:0',
+        ]);
+
+        LibraryBook::findOrFail($id)->update($data);
+
+        return redirect()->route('library.index')->with('success', 'Book updated successfully.');
+    }
+
     /** Remove a book from the library catalog */
     public function destroy($id)
     {
