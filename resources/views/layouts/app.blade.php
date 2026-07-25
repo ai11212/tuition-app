@@ -82,13 +82,14 @@
           Dashboard
         </a>
         
-        <!-- Students Dropdown -->
-        <div class="relative" @mouseenter="studentsOpen=true" @mouseleave="studentsOpen=false">
-          <button class="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition flex items-center gap-1 {{ request()->is('students*') || request()->is('reference-profile*') ? 'bg-gray-100 text-gray-900 font-semibold' : '' }}">
+        <!-- Students Dropdown (click-only; opening closes the others) -->
+        <div class="relative">
+          <button @click="studentsOpen = !studentsOpen; financeOpen = false; libraryOpen = false"
+                  class="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition flex items-center gap-1 {{ request()->is('students*') || request()->is('reference-profile*') ? 'bg-gray-100 text-gray-900 font-semibold' : '' }}">
             Students
             <svg class="w-4 h-4 transition-transform" :class="{'rotate-180':studentsOpen}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
           </button>
-          <div x-show="studentsOpen" x-transition class="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 w-48 py-2">
+          <div x-show="studentsOpen" x-cloak x-transition class="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 w-48 py-2">
             <a href="/students" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">View All Students</a>
             <a href="/students?action=new" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">New Admission</a>
             <a href="/reference-profile" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">Reference Profile</a>
@@ -100,13 +101,14 @@
           Attendance
         </a>
         
-        <!-- Finance Dropdown -->
-        <div class="relative" @mouseenter="financeOpen=true" @mouseleave="financeOpen=false">
-          <button class="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition flex items-center gap-1 {{ request()->is('payments*') || request()->is('accounts*') || request()->is('payment-verification*') || request()->is('expenses*') || request()->is('teacher-salaries*') ? 'bg-gray-100 text-gray-900 font-semibold' : '' }}">
+        <!-- Finance Dropdown (click-only; opening closes the others) -->
+        <div class="relative">
+          <button @click="financeOpen = !financeOpen; studentsOpen = false; libraryOpen = false"
+                  class="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition flex items-center gap-1 {{ request()->is('payments*') || request()->is('accounts*') || request()->is('payment-verification*') || request()->is('expenses*') || request()->is('teacher-salaries*') ? 'bg-gray-100 text-gray-900 font-semibold' : '' }}">
             Finance
             <svg class="w-4 h-4 transition-transform" :class="{'rotate-180':financeOpen}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
           </button>
-          <div x-show="financeOpen" x-transition class="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 w-52 py-2">
+          <div x-show="financeOpen" x-cloak x-transition class="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 w-52 py-2">
             <a href="/payments" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">Take Payment</a>
             {{-- Defaulter List hidden (15/07/2026) — flip to true to restore --}}
             @if(false)
@@ -129,13 +131,14 @@
           </div>
         </div>
 
-        <!-- Library Dropdown -->
-        <div class="relative" @mouseenter="libraryOpen=true" @mouseleave="libraryOpen=false">
-          <button class="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition flex items-center gap-1 {{ request()->is('books*') || request()->is('book-library*') ? 'bg-gray-100 text-gray-900 font-semibold' : '' }}">
+        <!-- Library Dropdown (click-only; opening closes the others) -->
+        <div class="relative">
+          <button @click="libraryOpen = !libraryOpen; studentsOpen = false; financeOpen = false"
+                  class="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition flex items-center gap-1 {{ request()->is('books*') || request()->is('book-library*') ? 'bg-gray-100 text-gray-900 font-semibold' : '' }}">
             Library
             <svg class="w-4 h-4 transition-transform" :class="{'rotate-180':libraryOpen}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
           </button>
-          <div x-show="libraryOpen" x-transition class="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 w-48 py-2">
+          <div x-show="libraryOpen" x-cloak x-transition class="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 w-48 py-2">
             <a href="/books" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">View Books</a>
             <a href="/books/create" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">Add Books</a>
             <a href="/book-library" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">Book Library</a>
