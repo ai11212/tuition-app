@@ -211,7 +211,24 @@
 </style>
 
 <div class="compact-page">
-    
+
+    {{-- Sibling switcher (screen only — never printed): pick whose timetable to print --}}
+    @if(isset($allSiblings) && $allSiblings->count() > 1)
+    <div class="no-print mb-4 flex flex-wrap items-center gap-2 p-3 bg-gray-50 border rounded-lg">
+        <span class="text-sm text-gray-600 font-medium">Print for:</span>
+        <a href="{{ route('student.timetable.print', $reference) }}"
+           class="px-3 py-1.5 rounded-lg text-sm border {{ empty($selectedStudentId) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100' }}">
+            All siblings
+        </a>
+        @foreach($allSiblings as $sib)
+            <a href="{{ route('student.timetable.print', [$reference, 'student' => $sib->id]) }}"
+               class="px-3 py-1.5 rounded-lg text-sm border {{ ($selectedStudentId ?? null) == $sib->id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100' }}">
+                {{ $sib->first_name }} {{ $sib->last_name }}
+            </a>
+        @endforeach
+    </div>
+    @endif
+
     @if(isset($hasSiblings) && $hasSiblings)
         {{-- Multiple Students: Show separate list for each --}}
         @foreach($studentTimetables as $index => $studentData)

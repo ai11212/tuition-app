@@ -62,7 +62,8 @@
           <td class="px-3 py-3">£{{ number_format($group['primary']->deposit ?? 0, 2) }}</td>
           <td class="px-3 py-3">£{{ number_format($group['primary']->payment ?? 0, 2) }}</td>
           <td class="px-3 py-3 text-right whitespace-nowrap">
-            <a class="text-green-600 hover:text-green-800 mr-3" href="{{ route('student.timetable.print', $group['primary']->reference) }}">Print Timetable</a>
+            {{-- Opens the timetable pre-filtered to THIS student only --}}
+            <a class="text-green-600 hover:text-green-800 mr-3" href="{{ route('student.timetable.print', [$group['primary']->reference, 'student' => $group['primary']->id]) }}">Print Timetable</a>
             <a class="text-blue-600 hover:text-blue-800 mr-3" href="{{ route('students.edit', $group['primary']->reference) }}">Edit</a>
             <form class="inline" method="POST" action="{{ route('students.destroy', $group['primary']->reference) }}" 
                   onsubmit="return confirm('Are you sure you want to delete this student and all related records (timetables, invoices, payments)?')">
@@ -85,7 +86,8 @@
           <td class="px-3 py-3 text-gray-600">£{{ number_format($sibling->deposit ?? 0, 2) }}</td>
           <td class="px-3 py-3 text-gray-600">£{{ number_format($sibling->payment ?? 0, 2) }}</td>
           <td class="px-3 py-3 text-right whitespace-nowrap">
-            <a class="text-green-600 hover:text-green-800 mr-3 text-sm" href="{{ route('student.timetable.print', $sibling->reference) }}">Print Timetable</a>
+            {{-- Opens the timetable pre-filtered to THIS sibling only --}}
+            <a class="text-green-600 hover:text-green-800 mr-3 text-sm" href="{{ route('student.timetable.print', [$sibling->reference, 'student' => $sibling->id]) }}">Print Timetable</a>
             <span class="text-gray-400 text-sm">Edit via primary</span>
           </td>
         </tr>

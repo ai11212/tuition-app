@@ -13,11 +13,11 @@ class TimetableController extends Controller {
         return view('ref.print_timetable_result', ['reference'=>$r->reference,'rows'=>$rows]);
     }
 
-    public function printStudentTimetable($reference)
+    public function printStudentTimetable(Request $r, $reference)
     {
         // Get all students with this reference (main student + siblings)
         $students = Student::where('reference', $reference)->get();
-        
+
         if ($students->isEmpty()) {
             return redirect()->route('students.create')->with('error', 'No students found with reference: ' . $reference);
         }
@@ -27,6 +27,20 @@ class TimetableController extends Controller {
             ->orderBy('day_of_week')
             ->orderBy('start_time')
             ->get();
+
+        // Full family list for the sibling switcher (before any narrowing)
+        $allSiblings = $students;
+        $selectedStudentId = null;
+
+        // ?student=<id> — print ONLY that sibling's timetable. Requires entries
+        // carrying student_id (new data); old data can't be attributed per student.
+        $hasStudentIdData = $timetableEntries->whereNotNull('student_id')->count() > 0;
+        if ($r->filled('student') && $hasStudentIdData
+            && ($sel = $students->firstWhere('id', (int) $r->input('student')))) {
+            $selectedStudentId = $sel->id;
+            $students = collect([$sel]);
+            $timetableEntries = $timetableEntries->where('student_id', $sel->id)->values();
+        }
 
         // Determine the period type from first entry or student
         $period = 'weekly'; // default
@@ -62,7 +76,9 @@ class TimetableController extends Controller {
                 'students' => $students,
                 'studentTimetables' => $studentTimetables, // Separate timetables per student
                 'hasSiblings' => true,
-                'period' => $period
+                'period' => $period,
+                'allSiblings' => $allSiblings,
+                'selectedStudentId' => $selectedStudentId
             ]);
         } else {
             // Fall back to combined timetable (for old data or single student)
@@ -76,7 +92,9 @@ class TimetableController extends Controller {
                 'timetableGrid' => $timetableGrid,
                 'hasEntries' => $hasEntries,
                 'hasSiblings' => false,
-                'period' => $period
+                'period' => $period,
+                'allSiblings' => $allSiblings,
+                'selectedStudentId' => $selectedStudentId
             ]);
         }
     }
