@@ -69,7 +69,8 @@
         <div class="text-xs text-indigo-600 mt-1">Available credit</div>
       </div>
       <div class="bg-purple-50 p-4 rounded flex items-center justify-center">
-        <a href="{{ route('payments', ['reference' => $student->reference]) }}" 
+        {{-- 'ref' is the param the Take Payment page reads — student loads + searches automatically --}}
+        <a href="{{ route('payments', ['ref' => $student->reference]) }}"
            class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
           Record Payment →
         </a>
@@ -96,9 +97,9 @@
           </tr>
           @foreach($siblingData['timetable'] as $t)
           <tr class="border-b">
-            <td class="p-2">{{ $t->day_of_week }}</td>
-            <td>{{ $t->start_time }}</td>
-            <td>{{ $t->end_time }}</td>
+            <td class="p-2">{{ ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][(int) $t->day_of_week] ?? $t->day_of_week }}</td>
+            <td>{{ $t->start_time ? \Carbon\Carbon::parse($t->start_time)->format('g:i A') : '-' }}</td>
+            <td>{{ $t->end_time ? \Carbon\Carbon::parse($t->end_time)->format('g:i A') : '-' }}</td>
             <td>{{ $t->subject }}</td>
             <td>{{ $t->teacher_name }}</td>
             <td>{{ $t->room }}</td>
