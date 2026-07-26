@@ -179,6 +179,10 @@ class StudentController extends Controller
             'deposit_paid' => $admission['deposit_paid'] ?? 0,
             'payment'     => $admission['payment'] ?? null,
             'payment_plan' => $admission['payment'] ?? null, // Store original payment plan (read-only)
+            // Admission Payment is informational only (from 27/07/2026): new
+            // students start with a defined £0 fee base so the typed Payment
+            // never enters balance calculations — dues come from Payment Due.
+            'pending_amount' => 0,
             'period'      => $admission['period'] ?? null,
         ] + $guardian;
 
@@ -377,7 +381,9 @@ class StudentController extends Controller
                 'start_date' => $student->start_date,
                 'deposit' => $student->deposit,
                 'deposit_paid' => $student->deposit_paid,
-                'fee_amount' => $student->fee_amount,
+                // Informational Payment field — load the real stored `payment`
+                // value (what the Student List shows), not the legacy fee_amount
+                'fee_amount' => $student->payment,
                 'period' => $student->period,
             ];
         }
@@ -566,6 +572,10 @@ class StudentController extends Controller
                         'start_date' => $studentData['start_date'] ?? null,
                         'deposit' => $studentData['deposit'] ?? 0,
                         'deposit_paid' => $studentData['deposit_paid'] ?? 0,
+                        // Informational Payment field — saved to the real `payment`
+                        // column (what the Student List shows); fee_amount kept for
+                        // backward compatibility. No finance fields touched.
+                        'payment' => $studentData['fee_amount'] ?? 0,
                         'fee_amount' => $studentData['fee_amount'] ?? 0,
                         'period' => $studentData['period'] ?? $period,
                     ], $guardianData));

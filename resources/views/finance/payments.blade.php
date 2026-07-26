@@ -517,9 +517,10 @@
                   'paid_at' => $p->paid_at ? date('Y-m-d', strtotime($p->paid_at)) : ($p->paid_on ? date('Y-m-d', strtotime($p->paid_on)) : date('Y-m-d')),
                   'period_from' => $p->invoice_id ? \App\Models\Invoice::find($p->invoice_id)->period_from : '',
                   'period_to' => $p->invoice_id ? \App\Models\Invoice::find($p->invoice_id)->period_to : '',
+                  'due_added' => $p->invoice_id ? \App\Models\Invoice::find($p->invoice_id)->due_added : null,
                   'notes' => $p->notes,
                   'invoice_ref' => $p->invoice_ref ?? ''
-                ]) }})" 
+                ]) }})"
                         class="px-2 py-1 rounded bg-blue-100 text-blue-700 text-sm hover:bg-blue-200">✏️ Edit</button>
                 <form method="POST" action="{{ route('payments.destroy', $p->id) }}"
                       id="delete-form-{{ $p->id }}" class="inline">
@@ -588,7 +589,14 @@
         {{-- Editable Fields --}}
         <div class="grid md:grid-cols-2 gap-4 mb-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Amount (£) <span class="text-red-500">*</span></label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Payment Due (£)</label>
+            <input type="number" name="payment_due" id="edit_payment_due" step="0.01" min="0" placeholder="0.00"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <p class="text-xs text-gray-500 mt-1">Fee recorded with this payment — changing it adjusts the family's Balance by the difference.</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Payment Made (£) <span class="text-red-500">*</span></label>
             <input type="number" name="amount" id="edit_amount" step="0.01" min="0.01" required
                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
           </div>
@@ -664,6 +672,7 @@ function openEditModal(payment) {
   document.getElementById('modal_invoice_ref').textContent = payment.invoice_ref || '';
 
   // Set editable fields
+  document.getElementById('edit_payment_due').value = payment.due_added || '';
   document.getElementById('edit_amount').value = payment.amount || '';
   document.getElementById('edit_method').value = payment.method || 'Cash';
   document.getElementById('edit_purpose').value = payment.purpose || 'tuition';

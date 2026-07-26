@@ -171,8 +171,9 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Payment</label>
-                        <input type="number" step="0.01" min="0" name="students[{{ $index }}][fee_amount]" class="form-control" 
-                               value="{{ old('students.'.$index.'.fee_amount', $student->payment ?? $student->fee_amount) }}">
+                        {{-- Informational field — reads/writes the stored `payment` column (what the Student List shows) --}}
+                        <input type="number" step="0.01" min="0" name="students[{{ $index }}][fee_amount]" class="form-control"
+                               value="{{ old('students.'.$index.'.fee_amount', $student->payment) }}">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Period</label>
@@ -188,7 +189,7 @@
                     <input type="hidden" name="students[{{ $index }}][start_date]" value="{{ $student->start_date }}">
                     <input type="hidden" name="students[{{ $index }}][deposit]" value="{{ $student->deposit }}">
                     <input type="hidden" name="students[{{ $index }}][deposit_paid]" value="{{ $student->deposit_paid }}">
-                    <input type="hidden" name="students[{{ $index }}][fee_amount]" value="{{ $student->payment ?? $student->fee_amount }}">
+                    <input type="hidden" name="students[{{ $index }}][fee_amount]" value="{{ $student->payment }}">
                     <input type="hidden" name="students[{{ $index }}][period]" value="{{ $student->period }}">
                     @endif
 

@@ -599,6 +599,7 @@ class PaymentController extends Controller
     public function update(Request $request, $id)
     {
         $data = $request->validate([
+            'payment_due' => 'nullable|numeric|min:0',
             'amount'      => 'required|numeric|min:0.01',
             'method'      => 'required|string|in:Cash,Card,Bank,Transfer',
             'purpose'     => 'nullable|string|in:tuition,books,deposit,other',
@@ -629,7 +630,23 @@ class PaymentController extends Controller
             }
             
             $payment->update($paymentData);
-            
+
+            // Payment Due parity with Record a Payment: editing the due adjusts
+            // the family's fee base by exactly the DIFFERENCE, as if the payment
+            // had originally been recorded with the new value. Runs BEFORE the
+            // balance snapshot so the snapshot reflects the new expected total.
+            $oldDue = (float) ($payment->invoice->due_added ?? 0);
+            $newDue = (float) ($data['payment_due'] ?? 0);
+            $dueDelta = $newDue - $oldDue;
+            if ($dueDelta != 0.0) {
+                $dueStudent = Student::find($payment->invoice->student_id);
+                if ($dueStudent) {
+                    $dueStudent->update([
+                        'pending_amount' => max(0, ($dueStudent->pending_amount ?? $dueStudent->payment ?? 0) + $dueDelta),
+                    ]);
+                }
+            }
+
             // Re-snapshot this invoice's balance: expected minus payments up to
             // and including this (now-edited) payment, in chronological order
             $balance = 0;
@@ -653,6 +670,7 @@ class PaymentController extends Controller
                 'amount'      => $data['amount'],
                 'period_from' => $data['period_from'] ?? $payment->invoice->period_from,
                 'period_to'   => $data['period_to'] ?? $payment->invoice->period_to,
+                'due_added'   => $newDue > 0 ? $newDue : null,
                 'balance'     => $balance,
             ]);
             
