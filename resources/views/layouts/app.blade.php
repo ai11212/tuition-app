@@ -91,7 +91,7 @@
           </button>
           <div x-show="studentsOpen" x-cloak x-transition class="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 w-48 py-2">
             <a href="/students" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">View All Students</a>
-            <a href="/students?action=new" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">New Admission</a>
+            <a href="{{ route('students.create') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">New Admission</a>
             <a href="/reference-profile" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">Reference Profile</a>
             <a href="/students" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900">Print Time Table</a>
           </div>
@@ -172,7 +172,8 @@
     <div class="text-xs uppercase tracking-wider text-gray-400 px-2 mb-2">Main</div>
     <ul class="space-y-1 text-sm">
       <li><a href="/" class="block px-3 py-2 rounded hover:bg-gray-100 {{ request()->is('/') ? 'active' : '' }}" @click="open=false">🏠 Dashboard</a></li>
-      <li><a href="/students" class="block px-3 py-2 rounded hover:bg-gray-100 {{ request()->is('students*') ? 'active' : '' }}" @click="open=false">🧑‍🎓 Students (New Admission)</a></li>
+      <li><a href="/students" class="block px-3 py-2 rounded hover:bg-gray-100 {{ request()->is('students') ? 'active' : '' }}" @click="open=false">🧑‍🎓 Students</a></li>
+      <li><a href="{{ route('students.create') }}" class="block px-3 py-2 rounded hover:bg-gray-100 {{ request()->is('students/create') ? 'active' : '' }}" @click="open=false">➕ New Admission</a></li>
     </ul>
 
     <div class="text-xs uppercase tracking-wider text-gray-400 px-2 mt-5 mb-2">Attendance</div>
