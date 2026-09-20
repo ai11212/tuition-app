@@ -111,11 +111,13 @@ class BookController extends Controller {
             $student = Student::find($studentId);
             $studentName = $student ? trim($student->first_name . ' ' . $student->last_name) : "ID {$studentId}";
 
-            // No duplicate entries: same student + same subject + same title
+            // No duplicate entries: same student + same subject + same title on the SAME date.
+            // A different issue date is allowed (genuine second / replacement copy).
             if ($hasStudentReferenceColumn) {
                 $alreadyIssued = Book::where('student_reference', $studentId)
                     ->whereRaw('LOWER(subject) = ?', [strtolower($data['subject'])])
                     ->whereRaw('LOWER(title) = ?', [strtolower($data['title'])])
+                    ->whereDate('issue_date', $data['issue_date'])
                     ->exists();
                 if ($alreadyIssued) {
                     $duplicates[] = $studentName . ' (already has "' . $data['title'] . '")';
