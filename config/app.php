@@ -69,6 +69,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Display Timezone
+    |--------------------------------------------------------------------------
+    |
+    | Timestamps are STORED in UTC (see 'timezone' above) and converted to this
+    | zone only when displayed. Using a named zone rather than a fixed offset
+    | means the UK BST/GMT changes are applied automatically, per record, using
+    | the rule in force on that record's own date.
+    |
+    */
+
+    'display_timezone' => 'Europe/London',
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |

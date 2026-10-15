@@ -6,22 +6,45 @@ use App\Http\Controllers\{
     ReferenceProfileController, AccountController
 };
 
+/*
+|--------------------------------------------------------------------------
+| Access control
+|--------------------------------------------------------------------------
+| Abilities are defined in AppServiceProvider::boot(). Every ability
+| short-circuits on is_admin, so an admin passes all of them and nothing
+| changes for them.
+|
+|   can:admin       full access (finance, students, staff, salaries, admin)
+|   can:attendance  New Attendance + View Attendance
+|   can:books       issue/edit/delete books + Book Library
+|   can:lookup      Reference Profile and timetable printing
+|
+| The registration ORDER below is unchanged from before roles were added.
+| /payments and /accounts are each defined twice and the later definition
+| wins — both copies are gated.
+*/
+
 Route::get('/login', [AuthController::class,'showLogin'])->name('login');
 Route::post('/login', [AuthController::class,'login']);
 Route::post('/logout', [AuthController::class,'logout'])->name('logout');
 
+/* ---------------- Everyone who is signed in ---------------- */
 Route::middleware('auth')->group(function(){
     Route::get('/', [DashboardController::class,'index'])->name('dashboard');
+});
 
+/* ---------------- Admin only ---------------- */
+Route::middleware(['auth','can:admin'])->group(function(){
     // Students wizard (create)
     Route::get('/students/create', [StudentController::class,'create'])->name('students.create');
     Route::post('/students/next',   [StudentController::class,'next'])->name('students.next');
     Route::get('/students/confirm', [StudentController::class,'confirm'])->name('students.confirm');
     Route::post('/students',        [StudentController::class,'store'])->name('students.store');
-    
+
     // Students list and management
     Route::get('/students',         [StudentController::class,'index'])->name('students.index');
     Route::get('/students/{reference}/edit', [StudentController::class,'edit'])->name('students.edit');
+    // NOTE: the five routes below write money/fee data (three are PaymentController)
     Route::patch('/students/{id}/update-payment', [StudentController::class,'updatePayment'])->name('student.updatePayment');
     Route::patch('/students/{student}/update-pending-amount', [PaymentController::class,'updatePendingAmount'])->name('student.updatePendingAmount');
     Route::patch('/students/{student}/add-pending-amount', [PaymentController::class,'addPendingAmount'])->name('student.addPendingAmount');
@@ -48,7 +71,7 @@ Route::middleware('auth')->group(function(){
         return response()->json($r->session()->get('admission'));
     });
     */
-    // Staff + Books
+    // Staff
     Route::resource('staff', StaffController::class)->except(['show']);
 
     // Teachers (staff rows with role=teacher, auto reference T001+)
@@ -57,16 +80,28 @@ Route::middleware('auth')->group(function(){
     Route::get('/teachers/{staff}/edit', [\App\Http\Controllers\TeacherController::class,'edit'])->name('teachers.edit');
     Route::put('/teachers/{staff}',      [\App\Http\Controllers\TeacherController::class,'update'])->name('teachers.update');
     Route::delete('/teachers/{staff}',   [\App\Http\Controllers\TeacherController::class,'destroy'])->name('teachers.destroy');
+});
+
+/* ---------------- Books ---------------- */
+Route::middleware(['auth','can:books'])->group(function(){
+    // get-siblings must stay with books — the issue form cannot submit without it
     Route::get('/books/get-siblings', [BookController::class, 'getSiblings'])->name('books.get-siblings');
     Route::resource('books', BookController::class)->except(['show']);
+});
 
-    // Attendance
+/* ---------------- Attendance ---------------- */
+Route::middleware(['auth','can:attendance'])->group(function(){
     Route::get('/attendance', [AttendanceController::class,'sheet'])->name('attendance.sheet');
     Route::post('/attendance/save', [AttendanceController::class,'save'])->name('attendance.save');
     Route::get('/attendance/view', [AttendanceController::class,'view'])->name('attendance.view');
     Route::put('/attendance/{attendance}', [AttendanceController::class,'update'])->name('attendance.update');
     Route::delete('/attendance/{attendance}', [AttendanceController::class,'destroy'])->name('attendance.destroy');
     Route::get('/attendance/status', [AttendanceController::class,'statusByDate'])->name('attendance.status');
+});
+
+/* ---------------- Staff attendance + finance (admin) ---------------- */
+Route::middleware(['auth','can:admin'])->group(function(){
+    // Staff attendance feeds teacher salary payment, so it is admin-only
     Route::get('/attendance/staff', [StaffAttendanceController::class,'sheet'])->name('attendance.staff');
     Route::post('/attendance/staff/save', [StaffAttendanceController::class,'save'])->name('attendance.staff.save');
 
@@ -76,23 +111,27 @@ Route::middleware('auth')->group(function(){
     Route::get('/invoice/{invoice}/print', [\App\Http\Controllers\PaymentController::class,'printInvoice'])->name('invoice.print');
     Route::get('/defaulters', [\App\Http\Controllers\PaymentController::class,'defaulters'])->name('defaulters');
     Route::get('/accounts', [\App\Http\Controllers\PaymentController::class,'summary'])->name('accounts.summary');
+});
 
-    // Reference & Timetable
+/* ---------------- Student lookup (admin + any assistant) ---------------- */
+Route::middleware(['auth','can:lookup'])->group(function(){
     Route::get('/reference-profile', [ReferenceProfileController::class,'form'])->name('ref.form');
     Route::get('/reference-profile/show', [ReferenceProfileController::class,'show'])->name('ref.show');
     Route::get('/print-timetable', [TimetableController::class,'printForm'])->name('tt.form');
     Route::get('/print-timetable/show', [TimetableController::class,'print'])->name('tt.show');
-    
+
     // Enhanced student timetable printing
     Route::get('/student/{reference}/timetable/print', [TimetableController::class,'printStudentTimetable'])->name('student.timetable.print');
+});
 
-    // Account
+/* ---------------- Own account ---------------- */
+Route::middleware('auth')->group(function(){
     Route::get('/account/password', [AccountController::class,'passwordForm'])->name('account.password');
     Route::post('/account/password', [AccountController::class,'passwordSave'])->name('account.password.save');
 });
 
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth','can:admin'])->group(function () {
     Route::get('/payments',        [\App\Http\Controllers\PaymentController::class,'take'])->name('payments');
     Route::post('/payments',       [\App\Http\Controllers\PaymentController::class,'store'])->name('payments.store');
     Route::put('/payments/{id}',   [\App\Http\Controllers\PaymentController::class,'update'])->name('payments.update');
@@ -115,13 +154,18 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/expenses/{id}',    [\App\Http\Controllers\ExpenseController::class,'update'])->name('expenses.update');
     Route::delete('/expenses/{id}', [\App\Http\Controllers\ExpenseController::class,'destroy'])->name('expenses.destroy');
     Route::get('/expenses/export',  [\App\Http\Controllers\ExpenseController::class,'exportCsv'])->name('expenses.export');
+});
 
+/* ---------------- Book Library (part of the books job) ---------------- */
+Route::middleware(['auth','can:books'])->group(function () {
     // Book Library (catalog only — separate from student-issued books)
     Route::get('/book-library',         [\App\Http\Controllers\LibraryBookController::class,'index'])->name('library.index');
     Route::post('/book-library',        [\App\Http\Controllers\LibraryBookController::class,'store'])->name('library.store');
     Route::put('/book-library/{id}',    [\App\Http\Controllers\LibraryBookController::class,'update'])->name('library.update');
     Route::delete('/book-library/{id}', [\App\Http\Controllers\LibraryBookController::class,'destroy'])->name('library.destroy');
+});
 
+Route::middleware(['auth','can:admin'])->group(function () {
     // Teacher Salaries (paid from attendance; auto-creates "Teacher Salary" expenses)
     Route::get('/teacher-salaries',                  [\App\Http\Controllers\TeacherSalaryController::class,'index'])->name('salaries.index');
     Route::post('/teacher-salaries',                 [\App\Http\Controllers\TeacherSalaryController::class,'store'])->name('salaries.store');
@@ -129,4 +173,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/teacher-salaries/{salary}/edit',    [\App\Http\Controllers\TeacherSalaryController::class,'edit'])->name('salaries.edit');
     Route::put('/teacher-salaries/{salary}',         [\App\Http\Controllers\TeacherSalaryController::class,'update'])->name('salaries.update');
     Route::delete('/teacher-salaries/{salary}',      [\App\Http\Controllers\TeacherSalaryController::class,'destroy'])->name('salaries.destroy');
+
+    /* ---------------- Users & activity log ---------------- */
+    Route::get('/admin/users',           [\App\Http\Controllers\Admin\UserController::class,'index'])->name('admin.users.index');
+    Route::post('/admin/users',          [\App\Http\Controllers\Admin\UserController::class,'store'])->name('admin.users.store');
+    Route::put('/admin/users/{id}',      [\App\Http\Controllers\Admin\UserController::class,'update'])->name('admin.users.update');
+    Route::delete('/admin/users/{id}',   [\App\Http\Controllers\Admin\UserController::class,'destroy'])->name('admin.users.destroy');
+
+    Route::get('/admin/activity',        [\App\Http\Controllers\Admin\ActivityLogController::class,'index'])->name('admin.activity');
 });

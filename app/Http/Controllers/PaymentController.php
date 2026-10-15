@@ -623,7 +623,21 @@ class PaymentController extends Controller
             
             // Add optional columns if they exist (backward compatibility)
             if (Schema::hasColumn('payment_transactions','paid_at')) {
-                $paymentData['paid_at'] = $data['paid_at'];
+                // An edit is a CORRECTION, not a new payment, so the time the money
+                // was actually taken is preserved and only the date can change.
+                // The form's "Payment Date" is a date input and carries no time.
+                $keepTime = $payment->paid_at ? date('H:i:s', strtotime($payment->paid_at)) : null;
+
+                if (!$keepTime || $keepTime === '00:00:00') {
+                    // Time was wiped by an edit made before this rule existed —
+                    // recover the real moment from created_at. Editing such a
+                    // payment therefore repairs it.
+                    $keepTime = $payment->created_at
+                        ? date('H:i:s', strtotime($payment->created_at))
+                        : date('H:i:s');
+                }
+
+                $paymentData['paid_at'] = date('Y-m-d', strtotime($data['paid_at'])).' '.$keepTime;
             }
             if (Schema::hasColumn('payment_transactions','purpose')) {
                 $paymentData['purpose'] = $data['purpose'] ?? 'tuition';

@@ -29,7 +29,20 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            // Tests act as a full-access user unless they say otherwise
+            'is_admin' => true,
+            'capabilities' => [],
+            'is_active' => true,
         ];
+    }
+
+    /** A non-admin user holding only the given capabilities */
+    public function withCapabilities(array $capabilities): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_admin' => false,
+            'capabilities' => $capabilities,
+        ]);
     }
 
     /**

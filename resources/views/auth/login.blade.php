@@ -14,11 +14,11 @@
         <form method="POST" action="/login" class="space-y-4">@csrf
           <div>
             <label class="text-sm text-gray-700">Email</label>
-            <input name="email" class="mt-1 border rounded w-full p-2" value="admin@example.com">
+            <input type="email" name="email" autocomplete="username" required class="mt-1 border rounded w-full p-2" value="{{ old('email') }}">
           </div>
           <div>
             <label class="text-sm text-gray-700">Password</label>
-            <input type="password" name="password" class="mt-1 border rounded w-full p-2" value="password">
+            <input type="password" name="password" autocomplete="current-password" required class="mt-1 border rounded w-full p-2">
           </div>
           <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded">Sign in</button>
           @error('email')<div class="text-red-600 text-sm">{{ $message }}</div>@enderror

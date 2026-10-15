@@ -34,7 +34,7 @@
     {{-- Last Updated --}}
     @if($lastCalculated)
         <div class="alert alert-info">
-            <small>Last updated: {{ $lastCalculated->format('d/m/Y H:i') }} | Next update: Tomorrow at 8:00 AM</small>
+            <small>Last updated: {{ \App\Support\DisplayTime::local($lastCalculated)?->format('d/m/Y H:i') }} | Next update: Tomorrow at 8:00 AM</small>
         </div>
     @endif
 

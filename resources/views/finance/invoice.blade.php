@@ -190,7 +190,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Date</th>
+                        <th>Date / Time</th>
                         <th>Amount</th>
                         <th>Method</th>
                     </tr>
@@ -198,7 +198,7 @@
                 <tbody>
                     @foreach($invoice->transactions as $t)
                     <tr>
-                        <td>{{ \Carbon\Carbon::parse($t->paid_on)->format('d M Y') }}</td>
+                        <td>{{ $t->paid_moment?->format('d M Y, H:i') ?? '—' }}</td>
                         <td>£{{ number_format($t->amount, 2) }}</td>
                         <td>{{ $t->method }}</td>
                     </tr>

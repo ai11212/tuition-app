@@ -337,7 +337,7 @@
 
                 {{-- Footer --}}
                 <div class="border-t border-gray-200 py-1 text-center text-xs text-gray-500">
-                    Generated on {{ now()->format('F j, Y \a\t g:i A') }}
+                    Generated on {{ \App\Support\DisplayTime::local(now())->format('F j, Y \a\t g:i A') }}
                 </div>
             </div>
         @endforeach
@@ -447,7 +447,7 @@
 
             {{-- Footer --}}
             <div class="border-t border-gray-200 py-1 text-center text-xs text-gray-500">
-                Generated on {{ now()->format('F j, Y \a\t g:i A') }}
+                Generated on {{ \App\Support\DisplayTime::local(now())->format('F j, Y \a\t g:i A') }}
             </div>
         </div>
     @endif

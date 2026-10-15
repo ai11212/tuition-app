@@ -477,14 +477,8 @@
       <tbody>
         @forelse(($payments ?? []) as $p)
           @php
-            // Show date only (dd/mm/YYYY). prefer paid_at if present else paid_on
-            if ($p->paid_at) {
-              $when = \Carbon\Carbon::parse($p->paid_at)->format('d/m/Y');
-            } elseif ($p->paid_on) {
-              $when = \Carbon\Carbon::parse($p->paid_on)->format('d/m/Y');
-            } else {
-              $when = '';
-            }
+            // Date and time the payment was taken — see PaymentTransaction::getPaidMomentAttribute
+            $when = $p->paid_moment?->format('d/m/Y H:i') ?? '';
           @endphp
           <tr class="border-t">
             <td class="px-3 py-2 whitespace-nowrap">{{ $when }}</td>

@@ -68,6 +68,9 @@
         <div class="text-2xl font-bold text-indigo-900">£{{ number_format($paymentDetails['credit_balance'] ?? 0, 2) }}</div>
         <div class="text-xs text-indigo-600 mt-1">Available credit</div>
       </div>
+      {{-- Balances above stay visible to everyone; this button leads to Take Payment,
+           which only an admin can open, so it is hidden rather than left as a dead link --}}
+      @can('finance')
       <div class="bg-purple-50 p-4 rounded flex items-center justify-center">
         {{-- 'ref' is the param the Take Payment page reads — student loads + searches automatically --}}
         <a href="{{ route('payments', ['ref' => $student->reference]) }}"
@@ -75,6 +78,7 @@
           Record Payment →
         </a>
       </div>
+      @endcan
     </div>
   </div>
   @endif
