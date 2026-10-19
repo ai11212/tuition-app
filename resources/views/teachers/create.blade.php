@@ -222,6 +222,9 @@
                             @endif
                         </td>
                         <td class="px-3 py-4 whitespace-nowrap text-sm text-right">
+                            {{-- Add-only users can create a teacher but not change an
+                                 hourly rate or delete anyone — both affect salaries. --}}
+                            @can('admin')
                             <a href="{{ route('teachers.edit', $t) }}"
                                class="inline-block px-3 py-1 rounded-md border border-blue-200 text-blue-700 hover:bg-blue-50 font-medium">Edit</a>
                             <form method="POST" action="{{ route('teachers.destroy', $t) }}" class="inline"
@@ -231,6 +234,9 @@
                                 <button type="submit"
                                         class="inline-block px-3 py-1 rounded-md border border-red-200 text-red-600 hover:bg-red-50 font-medium ml-1">Delete</button>
                             </form>
+                            @else
+                            <span class="text-xs text-gray-400">—</span>
+                            @endcan
                         </td>
                     </tr>
                     @endforeach

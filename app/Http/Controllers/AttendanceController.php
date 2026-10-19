@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use App\Models\{Student,StudentAttendance,PaymentTransaction};
 
 class AttendanceController extends Controller {
@@ -99,14 +100,19 @@ class AttendanceController extends Controller {
             }
 
             // Save new attendance (subject trimmed; stored as typed otherwise)
-            StudentAttendance::create([
+            $attendanceData = [
                 'student_id' => $studentId,
                 'date' => $data['date'],
                 'subject' => isset($data['subject']) ? trim($data['subject']) : null,
                 'teacher' => $data['teacher'] ?? null,
                 'time' => $time,
                 'status' => $status
-            ]);
+            ];
+            // Who marked it (backward compatible: skipped if the column is absent)
+            if (Schema::hasColumn('student_attendances', 'created_by_name')) {
+                $attendanceData['created_by_name'] = optional(auth()->user())->name;
+            }
+            StudentAttendance::create($attendanceData);
             $saved++;
         }
         

@@ -165,6 +165,7 @@
                                     @if(Schema::hasColumn('books', 'student_reference'))
                                         <th style="width: 14%;">Student</th>
                                     @endif
+                                    <th style="width: 10%;">User</th>
                                     <th style="width: 12%;" class="text-center">Actions</th>
                                 </tr>
                             </thead>
@@ -190,9 +191,10 @@
                                         @endif
                                     </td>
                                     @endif
+                                    <td><small class="text-muted">{{ $book->created_by_name ?? '—' }}</small></td>
                                     <td class="text-center">
                                         <div class="d-flex gap-1 justify-content-center">
-                                            <button type="button" class="btn btn-sm btn-outline-primary" 
+                                            <button type="button" class="btn btn-sm btn-outline-primary"
                                                     onclick="editBook({{ $book->id }}, '{{ addslashes($book->reference) }}', '{{ addslashes($book->subject) }}', '{{ addslashes($book->title) }}', {{ $book->price }}, '{{ addslashes($book->student_reference ?? '') }}', '{{ ($book->issue_date ?? $book->created_at)->format('Y-m-d') }}')"
                                                     data-bs-toggle="modal" data-bs-target="#editModal"
                                                     style="min-width: 65px;">

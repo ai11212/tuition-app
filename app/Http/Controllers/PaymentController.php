@@ -387,6 +387,11 @@ class PaymentController extends Controller
         if (Schema::hasColumn('payment_transactions','purpose')) {
             $transactionData['purpose'] = $data['purpose'] ?? 'tuition';
         }
+
+        // Who took the payment (backward compatible: skipped if the column is absent)
+        if (Schema::hasColumn('payment_transactions','created_by_name')) {
+            $transactionData['created_by_name'] = optional(auth()->user())->name;
+        }
         
         PaymentTransaction::create($transactionData);
 

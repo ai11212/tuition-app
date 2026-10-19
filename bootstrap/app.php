@@ -15,6 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // the response and swallows its own errors, so it cannot break a page.
         $middleware->web(append: [
             \App\Http\Middleware\LogActivity::class,
+            // Ends an open session the moment an account is deactivated.
+            // Runs before any route's can: gate, so it also covers the three
+            // ungated routes (dashboard and the change-password form).
+            \App\Http\Middleware\EnsureUserIsActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

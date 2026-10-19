@@ -1,7 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-6xl mx-auto p-4">
+{{-- max-w-7xl matches the layout shell and the header bar. It was max-w-6xl,
+     which narrowed this page below its own container and made the results
+     table scroll sideways once the User column was added. --}}
+<div class="max-w-7xl mx-auto p-4">
   {{-- Success/Error Messages --}}
   @if(session('success'))
     <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
@@ -16,6 +19,9 @@
 
   <div class="flex items-center justify-between mb-4">
     <h1 class="text-2xl font-semibold">Payments</h1>
+    {{-- Record-only users get the page but not these: Expenses, bulk export
+         and the full payment printout are admin-only. --}}
+    @can('admin')
     <div class="flex gap-2">
       <a href="{{ route('expenses') }}" class="px-3 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 text-sm flex items-center gap-1">
         💸 Expenses
@@ -23,6 +29,7 @@
       <a href="{{ route('payments.export', request()->only('ref','from','to')) }}" class="px-3 py-2 rounded-lg border bg-white hover:bg-gray-50 text-sm">Export CSV</a>
       <a href="{{ route('payments.print', request()->only('ref','from','to')) }}" target="_blank" class="px-3 py-2 rounded-lg border bg-white hover:bg-gray-50 text-sm">Print</a>
     </div>
+    @endcan
   </div>
 
   {{-- Filters --}}
@@ -122,19 +129,24 @@
         </div>
         <div>
           <span class="text-blue-700 font-medium">Student New Plan:</span><br>
+          {{-- Editing the plan is admin-only; record-only users see the value --}}
+          @can('admin')
           <form method="POST" action="{{ route('student.updateNewPlan', $studentDetails['student']->id) }}" class="inline-flex items-center gap-2 mt-1">
             @csrf
             @method('PATCH')
             <span class="text-sm font-bold text-gray-600">£</span>
-            <input type="number" name="new_plan" 
-                   value="{{ old('new_plan', $studentDetails['student']->new_plan ?? '') }}" 
-                   step="0.01" min="0" 
+            <input type="number" name="new_plan"
+                   value="{{ old('new_plan', $studentDetails['student']->new_plan ?? '') }}"
+                   step="0.01" min="0"
                    class="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200"
                    placeholder="0.00">
             <button type="submit" class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors">
               Save
             </button>
           </form>
+          @else
+          <span class="text-sm text-gray-700">£{{ number_format($studentDetails['student']->new_plan ?? 0, 2) }}</span>
+          @endcan
         </div>
       </div>
 
@@ -470,6 +482,7 @@
           <th class="px-3 py-2 text-right">Amount (£)</th>
           <th class="px-3 py-2 text-left">Payment Period</th>
           <th class="px-3 py-2 text-left">Invoice</th>
+          <th class="px-3 py-2 text-left">User</th>
           <th class="px-3 py-2 text-left">Notes</th>
           <th class="px-3 py-2 text-left">Actions</th>
         </tr>
@@ -494,6 +507,7 @@
               @endif
             </td>
             <td class="px-3 py-2">{{ $p->invoice_ref ?? '' }}</td>
+            <td class="px-3 py-2 text-gray-700">{{ $p->created_by_name ?? '—' }}</td>
             <td class="px-3 py-2">{{ $p->notes }}</td>
             <td class="px-3 py-2">
               <div class="flex gap-2">
@@ -501,6 +515,9 @@
                   <a href="{{ route('invoice.print',$p->invoice_id) }}" 
                      class="px-2 py-1 rounded bg-gray-100 text-sm hover:bg-gray-200">Print</a>
                 @endif
+                {{-- Editing and deleting a payment are admin-only. A
+                     record-only user keeps Print. --}}
+                @can('admin')
                 <button onclick="openEditModal({{ json_encode([
                   'id' => $p->id,
                   'student_ref' => $p->student_ref,
@@ -528,11 +545,12 @@
                           onclick="confirmDelete({{ $p->id }}, '{{ $p->invoice_ref ?? 'N/A' }}')"
                           class="px-2 py-1 rounded bg-red-100 text-red-700 text-sm hover:bg-red-200">🗑️ Delete</button>
                 </form>
+                @endcan
               </div>
             </td>
           </tr>
         @empty
-          <tr><td class="px-3 py-6 text-center text-gray-500" colspan="9">No payments found.</td></tr>
+          <tr><td class="px-3 py-6 text-center text-gray-500" colspan="10">No payments found.</td></tr>
         @endforelse
       </tbody>
     </table>
@@ -545,7 +563,8 @@
   @endif
 </div>
 
-{{-- Edit Payment Modal --}}
+{{-- Edit Payment Modal — admin only; record-only users cannot edit a payment --}}
+@can('admin')
 <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
   <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
     <div class="p-6">
@@ -657,6 +676,7 @@
     </div>
   </div>
 </div>
+@endcan
 
 <script>
 function openEditModal(payment) {
@@ -692,12 +712,16 @@ function confirmDelete(paymentId, invoiceRef) {
   }
 }
 
-// Close modal when clicking outside
-document.getElementById('editModal').addEventListener('click', function(e) {
-  if (e.target === this) {
-    closeModal();
-  }
-});
+// Close modal when clicking outside. The modal is only rendered for admins,
+// so guard against it being absent for record-only users.
+const paymentEditModal = document.getElementById('editModal');
+if (paymentEditModal) {
+  paymentEditModal.addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeModal();
+    }
+  });
+}
 
 // Close modal on Escape key
 document.addEventListener('keydown', function(e) {

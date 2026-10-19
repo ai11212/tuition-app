@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class PaymentTransaction extends Model
 {
     use HasFactory;
-    protected $fillable = ['invoice_id','paid_on','paid_at','amount','method','notes','purpose'];
+    protected $fillable = ['invoice_id','paid_on','paid_at','amount','method','notes','purpose','created_by_name'];
     public function invoice(){ return $this->belongsTo(Invoice::class); }
 
     /**

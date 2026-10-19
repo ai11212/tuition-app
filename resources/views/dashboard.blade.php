@@ -54,12 +54,15 @@
   @endif
 </div>
 
+{{-- An account with no permissions can sign in but reach nothing. Say so,
+     rather than leaving them looking at an empty page. --}}
+@canany(['admin','admission','payments','attendance','books','teachers','lookup'])
 <h2 class="font-semibold text-lg mb-3">Quick Actions</h2>
 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-  @can('admin')
+  @can('admission')
   <a href="/students/create" class="p-3 rounded-lg border bg-white hover:bg-blue-50">New Admission</a>
   @endcan
-  @can('finance')
+  @can('payments')
   <a href="/payments" class="p-3 rounded-lg border bg-white hover:bg-blue-50">Take Payment</a>
   @endcan
   @can('lookup')
@@ -84,10 +87,20 @@
   @can('books')
   <a href="/book-library" class="p-3 rounded-lg border bg-white hover:bg-blue-50">Book Library</a>
   @endcan
-  @can('admin')
+  @can('teachers')
   <a href="/teachers/create" class="p-3 rounded-lg border bg-white hover:bg-blue-50">Add Teacher</a>
+  @endcan
+  @can('admin')
   <a href="{{ route('admin.users.index') }}" class="p-3 rounded-lg border bg-white hover:bg-blue-50">Users &amp; Access</a>
+  @can('super')
   <a href="{{ route('admin.activity') }}" class="p-3 rounded-lg border bg-white hover:bg-blue-50">Activity Log</a>
   @endcan
+  @endcan
 </div>
+@else
+<div class="p-6 rounded-xl bg-amber-50 border border-amber-200 text-amber-900">
+  <div class="font-semibold mb-1">Your account doesn't have any permissions yet</div>
+  <div class="text-sm">Ask your administrator to give you access, then sign out and back in.</div>
+</div>
+@endcanany
 @endsection

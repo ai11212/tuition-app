@@ -9,7 +9,9 @@
             <h1 class="text-2xl font-bold text-gray-800">👥 Users &amp; Access</h1>
             <p class="text-sm text-gray-500">Give each person their own login and only the access they need.</p>
         </div>
+        @can('super')
         <a href="{{ route('admin.activity') }}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">📋 Activity Log →</a>
+        @endcan
     </div>
 
     @include('partials.flash')
@@ -50,11 +52,14 @@
             </div>
 
             <div class="border-t pt-4">
+                {{-- Only the super user may create or grant admin access --}}
+                @can('super')
                 <label class="flex items-center gap-2 mb-3">
                     <input type="checkbox" name="is_admin" value="1" id="is-admin" class="rounded border-gray-300">
                     <span class="font-medium text-gray-800">Full admin</span>
                     <span class="text-xs text-gray-500">— everything, including finances, students and salaries</span>
                 </label>
+                @endcan
 
                 <div id="capability-block" class="pl-6">
                     <div class="text-sm font-medium text-gray-700 mb-2">Or give limited access:</div>
@@ -111,7 +116,9 @@
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-600">{{ $u->email }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                @if($u->is_admin)
+                                @if($u->is_super)
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">Super</span>
+                                @elseif($u->is_admin)
                                     <span class="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">Admin</span>
                                 @elseif(count($u->capabilityList()))
                                     @foreach($u->capabilityList() as $cap)
@@ -133,7 +140,7 @@
                                         onclick='editUser(@json($u->id), @json($u->name), @json($u->email), @json((bool) $u->is_admin), @json($u->capabilityList()), @json((bool) $u->is_active))'
                                         class="text-blue-600 hover:text-blue-900 font-medium mr-3">✏️ Edit</button>
 
-                                @if($u->id !== auth()->id())
+                                @if($u->id !== auth()->id() && !$u->is_super)
                                     <form method="POST" action="{{ route('admin.users.destroy', $u->id) }}"
                                           onsubmit="return confirm('Delete {{ addslashes($u->name) }}? Their activity log history is kept.');"
                                           class="inline">
@@ -154,12 +161,15 @@
 
 <script>
 function syncAdminToggle() {
-    const isAdmin = document.getElementById('is-admin').checked;
-    const block   = document.getElementById('capability-block');
-    block.style.opacity = isAdmin ? '0.4' : '1';
+    // The admin tick-box is only rendered for the super user
+    const adminBox = document.getElementById('is-admin');
+    const isAdmin  = adminBox ? adminBox.checked : false;
+    const block    = document.getElementById('capability-block');
+    if (block) block.style.opacity = isAdmin ? '0.4' : '1';
     document.querySelectorAll('.capability-box').forEach(b => b.disabled = isAdmin);
 }
-document.getElementById('is-admin').addEventListener('change', syncAdminToggle);
+const adminToggle = document.getElementById('is-admin');
+if (adminToggle) adminToggle.addEventListener('change', syncAdminToggle);
 
 function editUser(id, name, email, isAdmin, caps, isActive) {
     const form = document.getElementById('user-form');
@@ -171,7 +181,8 @@ function editUser(id, name, email, isAdmin, caps, isActive) {
     form.querySelector('[name="password"]').value = '';
     form.querySelector('[name="password_confirmation"]').value = '';
 
-    document.getElementById('is-admin').checked  = isAdmin;
+    const editAdminBox = document.getElementById('is-admin');
+    if (editAdminBox) editAdminBox.checked = isAdmin;
     document.getElementById('is-active').checked = isActive;
     document.querySelectorAll('.capability-box').forEach(b => b.checked = caps.includes(b.value));
     syncAdminToggle();

@@ -17,7 +17,12 @@ class Book extends Model
         if (Schema::hasColumn('books', 'student_reference')) {
             $fillable[] = 'student_reference';
         }
-        
+
+        // Who issued the book — only if the column exists
+        if (Schema::hasColumn('books', 'created_by_name')) {
+            $fillable[] = 'created_by_name';
+        }
+
         return $fillable;
     }
     

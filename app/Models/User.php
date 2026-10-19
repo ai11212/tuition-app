@@ -14,15 +14,20 @@ class User extends Authenticatable
     public const CAPABILITIES = [
         'attendance' => 'Log attendance (New Attendance + View Attendance)',
         'books'      => 'Manage books (issue, edit, delete, Book Library)',
+        'admission'  => 'New Admission — create new students',
+        'payments'   => 'Take Payment — record payments only (no edit, delete or export)',
+        'reference'  => 'Reference Profile — look up students',
+        'teachers'   => 'Add Teacher — create only (no edit or delete)',
     ];
 
-    protected $fillable = ['name','email','password','is_admin','capabilities','is_active'];
+    protected $fillable = ['name','email','password','is_admin','is_super','capabilities','is_active'];
 
     protected $hidden = ['password','remember_token'];
 
     protected $casts = [
         'capabilities' => 'array',
         'is_admin'     => 'boolean',
+        'is_super'     => 'boolean',
         'is_active'    => 'boolean',
     ];
 
@@ -42,6 +47,26 @@ class User extends Authenticatable
     public function getIsActiveAttribute($value): bool
     {
         return array_key_exists('is_active', $this->attributes) ? (bool) $value : true;
+    }
+
+    /**
+     * The single super user: the only account that may create or modify admins
+     * and read the activity log.
+     *
+     * Before the column exists (code deployed ahead of the SQL) this falls back
+     * to is_admin, so admins keep behaving exactly as they do today.
+     *
+     * The fallback keys off the attribute being absent. Authorization always
+     * reads Auth::user(), which is hydrated from the database, so once the
+     * column exists the real value is always present and used. A freshly
+     * built, unsaved model is the only case where the fallback can apply
+     * unexpectedly — pass is_super explicitly when constructing one.
+     */
+    public function getIsSuperAttribute($value): bool
+    {
+        return array_key_exists('is_super', $this->attributes)
+            ? (bool) $value
+            : (bool) $this->is_admin;
     }
 
     /** Capabilities as a plain array, never null */

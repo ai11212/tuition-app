@@ -6,6 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class StudentAttendance extends Model
 {
     use HasFactory;
-    protected $fillable = ['student_id','date','status','subject','time','teacher'];
+    protected $fillable = ['student_id','date','status','subject','time','teacher','created_by_name'];
     public function student(){ return $this->belongsTo(Student::class); }
 }

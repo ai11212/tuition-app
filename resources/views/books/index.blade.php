@@ -12,6 +12,7 @@
   @if(Schema::hasColumn('books', 'student_reference'))
     <th>Student Ref</th>
   @endif
+  <th>User</th>
   <th></th>
 </tr>
 @foreach($items as $b)
@@ -32,6 +33,7 @@
   @endif
 </td>
 @endif
+<td class="text-sm text-gray-700">{{ $b->created_by_name ?? '—' }}</td>
 <td class="text-right p-2">
   <a class="text-blue-600" href="{{ route('books.edit',$b) }}">Edit</a>
   <form class="inline" method="POST" action="{{ route('books.destroy',$b) }}">@csrf @method('DELETE')<button class="text-red-600 ml-2">Delete</button></form>

@@ -85,6 +85,8 @@ class BookController extends Controller {
     public function store(Request $r){
         // Check if student_reference column exists
         $hasStudentReferenceColumn = Schema::hasColumn('books', 'student_reference');
+        // Who issued the book (backward compatible: skipped if the column is absent)
+        $hasCreatedByName = Schema::hasColumn('books', 'created_by_name');
 
         // All fields required; a book must be assigned to at least one student
         $rules = [
@@ -134,6 +136,9 @@ class BookController extends Controller {
             ];
             if ($hasStudentReferenceColumn) {
                 $bookData['student_reference'] = $studentId; // Store student ID
+            }
+            if ($hasCreatedByName) {
+                $bookData['created_by_name'] = optional(auth()->user())->name;
             }
 
             Book::create($bookData);

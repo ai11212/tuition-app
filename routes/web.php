@@ -33,14 +33,18 @@ Route::middleware('auth')->group(function(){
     Route::get('/', [DashboardController::class,'index'])->name('dashboard');
 });
 
-/* ---------------- Admin only ---------------- */
-Route::middleware(['auth','can:admin'])->group(function(){
-    // Students wizard (create)
+/* ---------------- New Admission (create only) ---------------- */
+Route::middleware(['auth','can:admission'])->group(function(){
+    // Students wizard (create). Ends at student.timetable.print, which is
+    // can:lookup — any capability holder passes that.
     Route::get('/students/create', [StudentController::class,'create'])->name('students.create');
     Route::post('/students/next',   [StudentController::class,'next'])->name('students.next');
     Route::get('/students/confirm', [StudentController::class,'confirm'])->name('students.confirm');
     Route::post('/students',        [StudentController::class,'store'])->name('students.store');
+});
 
+/* ---------------- Admin only ---------------- */
+Route::middleware(['auth','can:admin'])->group(function(){
     // Students list and management
     Route::get('/students',         [StudentController::class,'index'])->name('students.index');
     Route::get('/students/{reference}/edit', [StudentController::class,'edit'])->name('students.edit');
@@ -74,12 +78,18 @@ Route::middleware(['auth','can:admin'])->group(function(){
     // Staff
     Route::resource('staff', StaffController::class)->except(['show']);
 
-    // Teachers (staff rows with role=teacher, auto reference T001+)
-    Route::get('/teachers/create', [\App\Http\Controllers\TeacherController::class,'create'])->name('teachers.create');
-    Route::post('/teachers',       [\App\Http\Controllers\TeacherController::class,'store'])->name('teachers.store');
+    // Teachers (staff rows with role=teacher, auto reference T001+).
+    // Create is also open to can:teachers below; edit/delete stay admin because
+    // an hourly rate drives what the teacher is paid.
     Route::get('/teachers/{staff}/edit', [\App\Http\Controllers\TeacherController::class,'edit'])->name('teachers.edit');
     Route::put('/teachers/{staff}',      [\App\Http\Controllers\TeacherController::class,'update'])->name('teachers.update');
     Route::delete('/teachers/{staff}',   [\App\Http\Controllers\TeacherController::class,'destroy'])->name('teachers.destroy');
+});
+
+/* ---------------- Add Teacher (create only) ---------------- */
+Route::middleware(['auth','can:teachers'])->group(function(){
+    Route::get('/teachers/create', [\App\Http\Controllers\TeacherController::class,'create'])->name('teachers.create');
+    Route::post('/teachers',       [\App\Http\Controllers\TeacherController::class,'store'])->name('teachers.store');
 });
 
 /* ---------------- Books ---------------- */
@@ -105,12 +115,18 @@ Route::middleware(['auth','can:admin'])->group(function(){
     Route::get('/attendance/staff', [StaffAttendanceController::class,'sheet'])->name('attendance.staff');
     Route::post('/attendance/staff/save', [StaffAttendanceController::class,'save'])->name('attendance.staff.save');
 
-    // Finance
+    Route::get('/defaulters', [\App\Http\Controllers\PaymentController::class,'defaulters'])->name('defaulters');
+    Route::get('/accounts', [\App\Http\Controllers\PaymentController::class,'summary'])->name('accounts.summary');
+});
+
+/* ---------------- Take Payment (record only) ---------------- */
+// Recording and printing an invoice. Editing, deleting and exporting stay
+// admin-only below. Registration order is unchanged, so the duplicate
+// /payments definitions still resolve exactly as before.
+Route::middleware(['auth','can:payments'])->group(function(){
     Route::get('/payments', [\App\Http\Controllers\PaymentController::class,'take'])->name('payments.take');
     Route::post('/payments', [\App\Http\Controllers\PaymentController::class,'store'])->name('payments.store');
     Route::get('/invoice/{invoice}/print', [\App\Http\Controllers\PaymentController::class,'printInvoice'])->name('invoice.print');
-    Route::get('/defaulters', [\App\Http\Controllers\PaymentController::class,'defaulters'])->name('defaulters');
-    Route::get('/accounts', [\App\Http\Controllers\PaymentController::class,'summary'])->name('accounts.summary');
 });
 
 /* ---------------- Student lookup (admin + any assistant) ---------------- */
@@ -131,9 +147,14 @@ Route::middleware('auth')->group(function(){
 });
 
 
-Route::middleware(['auth','can:admin'])->group(function () {
+// The live GET/POST /payments (these later definitions win over the earlier
+// duplicates). Record-only, so they share the can:payments gate.
+Route::middleware(['auth','can:payments'])->group(function () {
     Route::get('/payments',        [\App\Http\Controllers\PaymentController::class,'take'])->name('payments');
     Route::post('/payments',       [\App\Http\Controllers\PaymentController::class,'store'])->name('payments.store');
+});
+
+Route::middleware(['auth','can:admin'])->group(function () {
     Route::put('/payments/{id}',   [\App\Http\Controllers\PaymentController::class,'update'])->name('payments.update');
     Route::delete('/payments/{id}',[\App\Http\Controllers\PaymentController::class,'destroy'])->name('payments.destroy');
     Route::get('/payments/export', [\App\Http\Controllers\PaymentController::class,'exportCsv'])->name('payments.export');
@@ -180,5 +201,8 @@ Route::middleware(['auth','can:admin'])->group(function () {
     Route::put('/admin/users/{id}',      [\App\Http\Controllers\Admin\UserController::class,'update'])->name('admin.users.update');
     Route::delete('/admin/users/{id}',   [\App\Http\Controllers\Admin\UserController::class,'destroy'])->name('admin.users.destroy');
 
-    Route::get('/admin/activity',        [\App\Http\Controllers\Admin\ActivityLogController::class,'index'])->name('admin.activity');
+    // Activity log is super-only — admins must not be able to read a record of
+    // their own actions. Gated per-route rather than moving it out of the group.
+    Route::get('/admin/activity',        [\App\Http\Controllers\Admin\ActivityLogController::class,'index'])
+        ->middleware('can:super')->name('admin.activity');
 });
