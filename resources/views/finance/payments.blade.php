@@ -223,6 +223,9 @@
                     <span class="text-green-900 font-medium">{{ $book->title }}</span>
                     <span class="text-xs text-green-700 block">Ref: {{ $book->reference }}</span>
                     <span class="text-xs text-green-700 block">Issued: {{ $book->created_at->format('d/m/Y') }}</span>
+                    {{-- Who issued it. Display only — same source as the User column
+                         on the Books list; null on books issued before tracking. --}}
+                    <span class="text-xs text-green-700 block">User: {{ $book->created_by_name ?? '—' }}</span>
                   </div>
                   <span class="font-semibold text-green-900">£{{ number_format($book->price, 2) }}</span>
                 </div>
